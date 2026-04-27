@@ -8,6 +8,7 @@ type SessionConfig = {
   brand: string;
   apiKey: string;
   threshold: number;
+  demoMode?: boolean;
 };
 
 export default function App() {
@@ -24,10 +25,12 @@ export default function App() {
   }, []);
 
   const handleStart = (cfg: SessionConfig) => {
-    try {
-      sessionStorage.setItem(API_KEY_STORAGE, cfg.apiKey);
-    } catch {
-      /* ignore */
+    if (!cfg.demoMode && cfg.apiKey) {
+      try {
+        sessionStorage.setItem(API_KEY_STORAGE, cfg.apiKey);
+      } catch {
+        /* ignore */
+      }
     }
     setConfig(cfg);
   };
@@ -45,6 +48,7 @@ export default function App() {
       brand={config.brand}
       apiKey={config.apiKey}
       threshold={config.threshold}
+      demoMode={!!config.demoMode}
       onStop={handleStop}
     />
   );

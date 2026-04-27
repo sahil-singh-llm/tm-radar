@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 type Props = {
   initialKey: string | null;
-  onStart: (config: { brand: string; apiKey: string; threshold: number }) => void;
+  onStart: (config: { brand: string; apiKey: string; threshold: number; demoMode?: boolean }) => void;
 };
 
 export function SetupScreen({ initialKey, onStart }: Props) {
@@ -24,6 +24,15 @@ export function SetupScreen({ initialKey, onStart }: Props) {
       brand: brand.trim().toLowerCase(),
       apiKey: apiKey.trim(),
       threshold,
+    });
+  };
+
+  const startDemo = () => {
+    onStart({
+      brand: brand.trim().toLowerCase() || 'nike',
+      apiKey: '',
+      threshold,
+      demoMode: true,
     });
   };
 
@@ -128,6 +137,28 @@ export function SetupScreen({ initialKey, onStart }: Props) {
             >
               Start Monitoring →
             </button>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center" aria-hidden>
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-3 bg-surface text-[10px] font-mono uppercase tracking-widest text-muted">
+                  or
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={startDemo}
+              className="w-full border border-border hover:border-accent text-muted hover:text-accent font-mono text-xs uppercase tracking-wider py-3 rounded-sm transition-colors"
+            >
+              ▶ Try demo (no API key required)
+            </button>
+            <p className="-mt-3 text-[11px] text-muted text-center italic">
+              Simulated certificate stream + canned legal analyses for demonstration purposes.
+            </p>
           </form>
         </div>
 

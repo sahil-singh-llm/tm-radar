@@ -3,6 +3,7 @@ import { CertstreamClient, type ConnectionStatus } from '../lib/certstream';
 import { analyzeDomain, type DetectionResult } from '../lib/detection';
 import { fetchWebsiteContent } from '../lib/fetcher';
 import { analyzeWithClaude } from '../lib/claude';
+import { generateDemoAnalysis } from '../lib/demoAnalysis';
 import { StatsBar } from './StatsBar';
 import { LiveFeed, type FeedEntry } from './LiveFeed';
 import { DomainAlert, type AlertEntry } from './DomainAlert';
@@ -11,6 +12,7 @@ type Props = {
   brand: string;
   apiKey: string;
   threshold: number;
+  demoMode: boolean;
   onStop: () => void;
 };
 
@@ -18,7 +20,9 @@ const FEED_MAX = 24;
 const ALERT_MAX = 60;
 const FLUSH_MS = 100;
 
-export function Monitor({ brand, apiKey, threshold, onStop }: Props) {
+const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+
+export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);
@@ -53,6 +57,11 @@ export function Monitor({ brand, apiKey, threshold, onStop }: Props) {
     updateAlert(result.domain, { analysisStage: 'pending', error: undefined });
 
     try {
+      if (demoMode) {
+        await runDemoAnalysis(result);
+        return;
+      }
+
       // Stage 1 — domain-only analysis
       const stage1 = await analyzeWithClaude(apiKey, brand, result, null);
       updateAlert(result.domain, {
@@ -85,6 +94,27 @@ export function Monitor({ brand, apiKey, threshold, onStop }: Props) {
     } finally {
       analyzing.current.delete(result.domain);
     }
+  };
+
+  const runDemoAnalysis = async (result: DetectionResult) => {
+    // Stage 1 — fake latency, then domain-only canned analysis
+    await sleep(700 + Math.random() * 800);
+    updateAlert(result.domain, {
+      analysis: generateDemoAnalysis(brand, result, false),
+      analysisStage: 'domain-only',
+    });
+
+    // Stage 2 — fake fetch + 20% chance of unreachable for variety
+    await sleep(1400 + Math.random() * 1400);
+    if (Math.random() < 0.2) {
+      updateAlert(result.domain, { websiteUnreachable: true, analysisStage: 'domain-only' });
+      return;
+    }
+    updateAlert(result.domain, {
+      analysis: generateDemoAnalysis(brand, result, true),
+      analysisStage: 'enriched',
+      websiteFetched: true,
+    });
   };
 
   const requestAnalysis = (domain: string) => {
@@ -168,6 +198,7 @@ export function Monitor({ brand, apiKey, threshold, onStop }: Props) {
       onDomain,
       onStatusChange: setStatus,
       brandHint: brand,
+      forceDemoMode: demoMode,
     });
     client.start();
 
@@ -179,7 +210,7 @@ export function Monitor({ brand, apiKey, threshold, onStop }: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brand, apiKey, threshold]);
+  }, [brand, apiKey, threshold, demoMode]);
 
   const counts = useMemo(() => {
     let c = 0, h = 0, m = 0;
@@ -198,6 +229,7 @@ export function Monitor({ brand, apiKey, threshold, onStop }: Props) {
 
   return (
     <div className="h-screen flex flex-col bg-bg text-text">
+      {demoMode && <DemoBanner />}
       <StatsBar
         brand={brand}
         status={status}
@@ -255,6 +287,14 @@ export function Monitor({ brand, apiKey, threshold, onStop }: Props) {
         {/* LIVE FEED COLUMN */}
         <LiveFeed entries={feed} />
       </div>
+    </div>
+  );
+}
+
+function DemoBanner() {
+  return (
+    <div className="bg-accent/15 border-b border-accent/30 px-6 py-2 text-center text-[11px] text-accent font-mono uppercase tracking-widest">
+      ★ Demo Mode — Simulated certificate stream + canned legal analyses · No live data, no API calls
     </div>
   );
 }
