@@ -1,13 +1,26 @@
-# tm-radar — Trademark Squatting Detector
+# TM Radar
 
-Real-time brand protection through Certificate Transparency log monitoring.
+**Real-time trademark squatting detection through Certificate Transparency logs + LLM legal analysis.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/▶-Live_Demo-2563EB)](https://sahil-singh-llm.github.io/tm-radar/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Claude](https://img.shields.io/badge/Claude-Sonnet_4.6-D97757?logo=anthropic&logoColor=white)](https://www.anthropic.com)
+[![100% Client-Side](https://img.shields.io/badge/100%25-Client--Side-22C55E)](#)
+[![Deployed on GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-181717?logo=github&logoColor=white)](https://sahil-singh-llm.github.io/tm-radar/)
+
+---
+
+TM Radar is a purely client-side React application that watches every TLS certificate issued
+anywhere on the public internet, scores each new domain against a brand name you care about, and —
+for the truly suspicious ones — fetches the live website and asks an LLM for a structured legal
+assessment under UDRP and EUTMR criteria.
 
 **▶ Live demo:** https://sahil-singh-llm.github.io/tm-radar/ — runs entirely in your browser. The
 "Try demo" button gives you a full pipeline walkthrough without an API key.
-
-A purely client-side React application that watches every TLS certificate issued anywhere on the
-public internet, scores each new domain against a brand name you care about, and — for the truly
-suspicious ones — fetches the live website and asks an LLM for a structured legal assessment.
 
 ## What is Trademark Squatting?
 
