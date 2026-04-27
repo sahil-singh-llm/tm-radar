@@ -4,6 +4,8 @@ export type CertstreamHandlers = {
   onDomain: (domain: string) => void;
   onStatusChange: (status: ConnectionStatus) => void;
   brandHint?: string;
+  /** Skip the WebSocket entirely and emit a simulated feed. */
+  forceDemoMode?: boolean;
 };
 
 const CERTSTREAM_URL = 'wss://certstream.calidog.io';
@@ -32,6 +34,10 @@ export class CertstreamClient {
   start() {
     this.stopped = false;
     this.attempt = 0;
+    if (this.handlers.forceDemoMode) {
+      this.startDemoMode();
+      return;
+    }
     this.connect();
   }
 
