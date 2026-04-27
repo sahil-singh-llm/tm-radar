@@ -14,7 +14,7 @@ const FIRST_POLL_BACKLOG_LIMIT = 12;
 
 const CORS_PROXIES: Array<(url: string) => string> = [
   (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`,
 ];
 
 type CrtshEntry = {
