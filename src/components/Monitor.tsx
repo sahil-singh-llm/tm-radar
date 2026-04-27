@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CertstreamClient, type ConnectionStatus } from '../lib/certstream';
+import { CrtshClient, type ConnectionStatus } from '../lib/crtsh';
 import { analyzeDomain, type DetectionResult } from '../lib/detection';
 import { fetchWebsiteContent } from '../lib/fetcher';
 import { analyzeWithClaude } from '../lib/claude';
@@ -194,7 +194,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
       scheduleFlush();
     };
 
-    const client = new CertstreamClient({
+    const client = new CrtshClient({
       onDomain,
       onStatusChange: setStatus,
       brandHint: brand,

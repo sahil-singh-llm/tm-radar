@@ -175,8 +175,9 @@ export function SetupScreen({ initialKey, onStart }: Props) {
 
           <Section title="What are Certificate Transparency logs?">
             Every TLS certificate issued by every CA is published to public, append-only logs.
-            <span className="font-mono text-text"> Certstream</span> mirrors that firehose over
-            WebSocket — every new HTTPS-capable domain on the public internet, in real time, free.
+            <span className="font-mono text-text"> crt.sh</span> indexes them all and exposes a
+            JSON API — we poll it every 30 seconds for new certificates whose hostnames match
+            your brand string.
           </Section>
 
           <Section title="How this tool works">

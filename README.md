@@ -47,9 +47,12 @@ enforcement campaign.
 
 ## How it works
 
-1. **Stream** — Connects to [Certstream](https://certstream.calidog.io/) via WebSocket, which
-   mirrors Google's and Cloudflare's public Certificate Transparency logs. Every new HTTPS
-   certificate, every domain, every CA — typically 200–500 domains per minute.
+1. **Poll** — Queries [crt.sh](https://crt.sh) (Sectigo's public Certificate Transparency log
+   index) every 30 seconds for entries whose Subject Alternative Names contain the watched
+   brand string. crt.sh's monotonic `id` cursor lets the client emit only newly-inserted
+   certificates on each subsequent poll. This is brand-targeted polling rather than a
+   firehose — drastically lower noise, and resilient (Calidog's public Certstream WebSocket has
+   been intermittently down since 2023).
 2. **Score** — Each new domain is run through a multi-signal detection engine:
    - Normalized Levenshtein distance against the brand name
    - Homoglyph character substitution (Cyrillic, accented Latin, digit lookalikes)
@@ -156,8 +159,8 @@ Open [http://localhost:5173](http://localhost:5173). Two ways to use it:
   certificate stream + canned legal analyses for each detection technique. Full UX walkthrough
   without an account anywhere.
 
-If the Certstream WebSocket can't be reached in live mode (corporate firewall, etc.), the app
-automatically falls back to the simulated demo feed.
+If crt.sh is unreachable in live mode (corporate firewall, CORS-proxy outage, etc.), the app
+automatically falls back to the simulated demo feed after three consecutive failed polls.
 
 ## Deploy to GitHub Pages
 
@@ -181,7 +184,7 @@ src/
 │   ├── LiveFeed.tsx     — scrolling feed of all observed domains
 │   └── StatsBar.tsx     — counters + connection status
 └── lib/
-    ├── certstream.ts    — WebSocket client w/ exponential backoff + demo mode
+    ├── crtsh.ts         — crt.sh polling client w/ id-cursor + demo fallback
     ├── detection.ts     — Levenshtein, combosquatting, keyword, TLD scoring
     ├── homoglyphs.ts    — character substitution map + normalization
     ├── fetcher.ts       — multi-proxy CORS website fetch
@@ -190,9 +193,10 @@ src/
 
 ## Performance Notes
 
-Certstream emits 200–500 domains per minute. The Monitor buffers incoming domains and flushes
-state every 100 ms, keeping React re-renders cheap even at peak throughput. The live-feed list is
-capped at 24 entries; the alerts list at 60.
+Brand-targeted crt.sh polling typically returns a small set of new certificates per 30-second
+window — much lower volume than a firehose, and almost all signal. The Monitor still buffers
+incoming domains and flushes state every 100 ms (legacy from the Certstream firehose design;
+cheap to keep). The live-feed list is capped at 24 entries; the alerts list at 60.
 
 Claude calls are serialized with a 2-second minimum gap to stay within free-tier rate limits.
 

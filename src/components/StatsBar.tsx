@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ConnectionStatus } from '../lib/certstream';
+import type { ConnectionStatus } from '../lib/crtsh';
 
 type Props = {
   brand: string;
