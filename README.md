@@ -1,6 +1,6 @@
 # TM Radar
 
-**Real-time trademark squatting detection through Certificate Transparency logs + LLM legal analysis.**
+**Real-time trademark squatting detection through Certificate Transparency logs + AI-powered legal analysis.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Live Demo](https://img.shields.io/badge/▶-Live_Demo-2563EB)](https://sahil-singh-llm.github.io/tm-radar/)
@@ -16,16 +16,23 @@
 
 TM Radar is a purely client-side React application that watches every TLS certificate issued
 anywhere on the public internet, scores each new domain against a brand name you care about, and —
-for the truly suspicious ones — fetches the live website and asks an LLM for a structured legal
-assessment under UDRP and EUTMR criteria.
+for the truly suspicious ones — fetches the live website and produces a structured pre-triage memo
+mapping the observed signals to UDRP §4 and EUTMR Art. 9 elements for attorney review.
 
 **▶ Live demo:** https://sahil-singh-llm.github.io/tm-radar/ — runs entirely in your browser. The
 "Try demo" button gives you a full pipeline walkthrough without an API key.
 
-## What is Trademark Squatting?
+## What this tool detects: cybersquatting
 
-Trademark squatting is the bad-faith registration of domains that are confusingly similar to an
-established trademark. Variants include:
+> **Terminology note.** *Trademark squatting* in strict legal usage refers to the bad-faith
+> registration of a **trademark** by someone other than the legitimate brand owner. What this tool
+> detects is the bad-faith registration of **domain names** that mimic an existing mark — the
+> precise term is **cybersquatting** (per ICANN's UDRP), with typosquatting, homoglyph attacks,
+> combosquatting, and keyword injection as recognized subtypes. The repo title "TM Radar" frames
+> the use case from the brand-protection perspective; the technical detection runs on domain
+> identifiers.
+
+Common variants:
 
 - **Typosquatting** — `nikee.com`, `paypa1.com`
 - **Homoglyph attacks** — `nіke.com` (Cyrillic `і` instead of Latin `i`)
@@ -33,10 +40,10 @@ established trademark. Variants include:
 - **Keyword injection** — `paypal-secure-login.com`
 - **Suspicious-TLD variants** — `nike.tk`, `spotify.click`
 
-Squatters typically use these domains to phish customers, distribute counterfeit goods, or extort
-the legitimate brand owner. Catching the registration on day one — before the domain is ever
-served to a real user — is the difference between a quick UDRP takedown and a costly enforcement
-campaign.
+Cybersquatters typically use these domains to phish customers, distribute counterfeit goods, or
+extort the legitimate brand owner. Catching the registration on day one — before the domain is
+ever served to a real user — is the difference between a routine UDRP filing and a costly
+enforcement campaign.
 
 ## How it works
 
@@ -51,19 +58,25 @@ campaign.
    - Suspicious-TLD bonus (`.tk`, `.xyz`, `.click`, …)
 3. **Fetch** — Domains scoring above the threshold trigger a website fetch via CORS proxy. Most
    freshly issued certificates point to nothing yet — that's expected and handled gracefully.
-4. **Analyze** — An LLM is asked for a structured assessment covering:
-   - Sign similarity and squatting technique
-   - Goods & services similarity (when the website is reachable)
-   - Likelihood of confusion for the average consumer
-   - Legal assessment under UDRP bad-faith criteria and EUTMR Art. 9
-   - Recommended action (UDRP filing, Cease & Desist, WHOIS investigation, …)
+4. **Analyze** — An LLM produces a structured pre-triage memo covering:
+   - **Sign similarity** — squatting technique observed (typo / homoglyph / combo / TLD / keyword / mixed)
+   - **Goods & services indicators** — apparent operating market, when the site is reachable
+   - **Likelihood of confusion** — high / medium / low / cannot be assessed
+   - **UDRP §4(a) elements** — explicit mapping to §4(a)(i)–(iii), with §4(b)(i)–(iv) bad-faith
+     circumstances referenced where applicable
+   - **EUTMR Art. 9(2) elements** — explicit mapping to 9(2)(a)–(c)
+   - **Indicators for legal review** — investigative steps for the reviewing attorney
+     (registrant identity via WHOIS/RDAP, prior use, registrant's portfolio, registrar
+     jurisdiction)
 
-   The current implementation uses **Anthropic Claude Sonnet 4.6**
-   (`claude-sonnet-4-6`, balanced flagship as of April 2026). Equivalent-quality models from
-   other providers — **OpenAI GPT-5.5**, **Google Gemini 3.1 Pro**, **DeepSeek V4** — should
-   produce comparable output and are on the roadmap as drop-in alternatives. For maximum
-   legal-reasoning depth, **Claude Opus 4.7** (`claude-opus-4-7`) is a one-line swap. A benchmark
-   comparing these four flagship models on labeled UDRP cases is planned.
+   The output is framed as decision support for a qualified trademark attorney, not as legal
+   advice or an enforcement recommendation. The current implementation uses
+   **Anthropic Claude Sonnet 4.6** (`claude-sonnet-4-6`, balanced flagship as of April 2026).
+   Equivalent-quality models from other providers — **OpenAI GPT-5.5**, **Google Gemini 3.1
+   Pro**, **DeepSeek V4** — should produce comparable output and are on the roadmap as drop-in
+   alternatives. For maximum legal-reasoning depth, **Claude Opus 4.7** (`claude-opus-4-7`) is a
+   one-line swap. A benchmark comparing these four flagship models on labeled UDRP cases is
+   planned.
 
 The analysis runs in two stages: an immediate domain-only assessment as soon as the domain is
 flagged, automatically refined with goods & services data once the website is fetched.
@@ -82,15 +95,23 @@ Severity bands: `low` 50–64, `medium` 65–79, `high` 80–91, `critical` 92+.
 
 ## Legal Framework
 
-The Claude prompt explicitly references:
+The prompt structures the LLM output around concrete provisions rather than asking the model to
+free-associate "bad faith":
 
-- **UDRP** — ICANN Uniform Domain-Name Dispute-Resolution Policy
-- **EUTMR Art. 9** — EU Trademark Regulation
-- **WIPO Arbitration** criteria for bad-faith registration
+- **UDRP §4(a)(i)–(iii)** — the three elements complainants must prove (confusing similarity,
+  no legitimate interest, registration and use in bad faith)
+- **UDRP §4(b)(i)–(iv)** — non-exhaustive bad-faith circumstances (offer for sale, blocking
+  pattern, competitor disruption, commercial gain via confusion)
+- **EUTMR Art. 9(2)(a)–(c)** — identical / similar / reputation-based infringement limbs
+- **WIPO Arbitration** as the principal forum for UDRP proceedings
 
-> ⚠ This tool identifies *potential* infringements for investigative purposes only.
-> It does not constitute legal advice. Always consult a qualified trademark attorney before
-> initiating any enforcement action.
+The output is framed as a *pre-triage memo*: structured observations and indicators for review
+by a qualified trademark attorney. See "Deliberate Simplifications" below for what is and is
+not modeled.
+
+> ⚠ This tool identifies *potential* indicators of cybersquatting for investigative purposes
+> only. It does not constitute legal advice. Always consult a qualified trademark attorney
+> before initiating any enforcement action.
 
 ## Setup
 
