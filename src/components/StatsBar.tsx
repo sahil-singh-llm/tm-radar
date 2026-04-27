@@ -44,8 +44,10 @@ export function StatsBar({
         <div className="flex items-center gap-3">
           <Hex />
           <div>
-            <div className="text-sm font-bold tracking-tight">TM Radar</div>
-            <div className="text-[10px] text-muted font-mono uppercase tracking-widest">
+            <div className="text-base font-serif italic font-semibold tracking-tight leading-none">
+              TM Radar
+            </div>
+            <div className="mt-1 text-[10px] text-muted font-mono uppercase tracking-widest">
               uptime {uptime}
             </div>
           </div>

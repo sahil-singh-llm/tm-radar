@@ -141,8 +141,8 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
     ctx.clearRect(0, 0, W, H);
 
     const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-    bg.addColorStop(0, 'rgba(37, 99, 235, 0.06)');
-    bg.addColorStop(0.7, 'rgba(37, 99, 235, 0.015)');
+    bg.addColorStop(0, 'rgba(37, 99, 235, 0.07)');
+    bg.addColorStop(0.7, 'rgba(37, 99, 235, 0.018)');
     bg.addColorStop(1, 'rgba(37, 99, 235, 0)');
     ctx.fillStyle = bg;
     ctx.beginPath();
@@ -184,7 +184,7 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
       const a0 = -((s + 2) * Math.PI) / 180;
       const a1 = -(s * Math.PI) / 180;
       const t = s / TRAIL_DEG;
-      const alpha = Math.pow(1 - t, 1.7) * 0.22;
+      const alpha = Math.pow(1 - t, 1.7) * 0.26;
       ctx.fillStyle = `rgba(56, 189, 248, ${alpha})`;
       ctx.beginPath();
       ctx.moveTo(0, 0);
@@ -192,12 +192,15 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
       ctx.closePath();
       ctx.fill();
     }
-    ctx.strokeStyle = 'rgba(125, 211, 252, 0.95)';
+    ctx.shadowColor = 'rgba(186, 230, 253, 0.7)';
+    ctx.shadowBlur = 6 * dpr;
+    ctx.strokeStyle = 'rgba(186, 230, 253, 0.98)';
     ctx.lineWidth = 1.4 * dpr;
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(R, 0);
     ctx.stroke();
+    ctx.shadowBlur = 0;
     ctx.restore();
 
     const ents = entriesRef.current;
@@ -263,14 +266,23 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
       ctx.beginPath();
       ctx.arc(x, y, dotR, 0, Math.PI * 2);
       ctx.fill();
+
+      if (info.sev === 'critical') {
+        const designR = (dotR + 5 * dpr);
+        ctx.strokeStyle = `rgba(251, 191, 36, ${0.55 * life + sweepBoost * 0.35})`;
+        ctx.lineWidth = 1 * dpr;
+        ctx.beginPath();
+        ctx.arc(x, y, designR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     });
 
-    ctx.strokeStyle = 'rgba(37, 99, 235, 0.9)';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
     ctx.lineWidth = 1.2 * dpr;
     ctx.beginPath();
     ctx.arc(cx, cy, 4 * dpr, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(37, 99, 235, 0.95)';
+    ctx.fillStyle = 'rgba(186, 230, 253, 0.95)';
     ctx.beginPath();
     ctx.arc(cx, cy, 1.6 * dpr, 0, Math.PI * 2);
     ctx.fill();
