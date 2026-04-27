@@ -3,63 +3,116 @@ import type { DetectionResult } from './detection';
 type TechniqueProfile = {
   name: string;
   signSimilarity: string;
-  udrp: string;
+  udrpI: string;
+  udrpII: string;
+  udrpIII: string;
+  udrpB?: string;
   eutmr: string;
-  recommendation: string;
+  reviewIndicators: string;
 };
 
 const PROFILES: Record<DetectionResult['technique'], TechniqueProfile> = {
   typosquatting: {
     name: 'Typosquatting',
     signSimilarity:
-      'single-character substitutions intended to be visually indistinguishable from the original at a glance',
-    udrp: 'Strong indicators of bad-faith registration under UDRP §4(b)(iv)',
-    eutmr: 'EUTMR Art. 9(2)(b) is squarely engaged given the near-identical sign',
-    recommendation: 'UDRP Filing — proceed with WIPO complaint after WHOIS investigation',
+      'single-character substitutions intended to be visually indistinguishable from the trademark at a glance',
+    udrpI:
+      'likely satisfied — domain is confusingly similar to the protected mark via a minimal-edit-distance variation',
+    udrpII:
+      'no apparent legitimate interest evident from the registration pattern; a real review must verify via WHOIS/RDAP',
+    udrpIII:
+      'bad-faith inference plausible; supporting evidence required',
+    udrpB:
+      '§4(b)(iv) — likely use to attract users for commercial gain via confusion',
+    eutmr:
+      '9(2)(b) clearly engaged where goods/services overlap; class similarity must be verified against the mark register',
+    reviewIndicators:
+      'WHOIS/RDAP for registrant identity; check registrant\'s portfolio for similar typo registrations; jurisdiction of registrar for venue selection',
   },
   homoglyph: {
     name: 'Homoglyph attack (IDN homograph)',
     signSimilarity:
-      'non-Latin homoglyph characters (Cyrillic / accented Latin / digit lookalikes) substituted for visually identical Latin glyphs — a textbook IDN homograph technique typically used for credential phishing',
-    udrp: 'Almost certain bad-faith registration under UDRP §4(b)(iv)',
-    eutmr: 'EUTMR Art. 9(2)(a) — the sign is identical for practical purposes',
-    recommendation:
-      'UDRP Filing immediately + parallel registrar abuse report + browser-vendor notification',
+      'non-Latin homoglyph characters (Cyrillic / accented Latin / digit lookalikes) substituted for visually identical Latin glyphs — an IDN homograph technique typically deployed for credential phishing',
+    udrpI:
+      'satisfied — the punycode-decoded sign is effectively identical to the mark',
+    udrpII:
+      'legitimate interest highly unlikely given the technique\'s phishing-specific nature',
+    udrpIII:
+      'strong bad-faith inference; the deliberate Unicode substitution is itself probative of intent',
+    udrpB:
+      '§4(b)(iv) — designed to attract users via confusion for commercial gain (often credential harvesting)',
+    eutmr:
+      '9(2)(a) likely engaged on the identical-sign limb; the visual identity overrides the underlying codepoint difference',
+    reviewIndicators:
+      'punycode decoding for evidence packaging; abuse reports to registrar and browser vendors; check for active phishing infrastructure on the host',
   },
   combosquatting: {
     name: 'Combosquatting',
     signSimilarity:
       'the trademark embedded as a substring with ancillary terms — the mark dominates the visual identity of the domain',
-    udrp: 'Likely actionable under UDRP §4(b)(iv) when registrant has no legitimate interest',
-    eutmr: 'EUTMR Art. 9(2)(b) is engaged, subject to use-in-commerce evaluation',
-    recommendation: 'WHOIS Investigation → Cease & Desist → UDRP if non-responsive',
+    udrpI:
+      'plausibly satisfied — the dominant component of the domain is the mark itself',
+    udrpII:
+      'depends on whether the registrant has any legitimate use for the affixed terms; requires verification',
+    udrpIII:
+      'bad-faith inference depends on use; the affixed terms (e.g. "shop", "official") are themselves probative when the registrant is unaffiliated',
+    udrpB:
+      '§4(b)(iv) where commercial use is observed; §4(b)(ii) if part of a blocking pattern',
+    eutmr:
+      '9(2)(b) is engaged subject to use-in-commerce evaluation and class overlap',
+    reviewIndicators:
+      'verify registrant relationship to mark holder; check for prior C&D correspondence; document the affix pattern for §4(b)(ii) argumentation if applicable',
   },
   keyword: {
     name: 'Keyword injection',
     signSimilarity:
       'the trademark paired with a high-risk phishing keyword (login / support / secure / verify) — a pattern overwhelmingly associated with credential-harvesting operations',
-    udrp: 'Strong bad-faith indicator under UDRP §4(b)(iv); the keyword pairing is itself probative of intent',
-    eutmr: 'EUTMR Art. 9(2)(b) clearly engaged',
-    recommendation:
-      'Expedited UDRP Filing + abuse report to registrar and hosting provider',
+    udrpI:
+      'satisfied — the mark is the dominant component, the keyword is an unmistakable lure term',
+    udrpII:
+      'legitimate interest highly improbable given the keyword choice',
+    udrpIII:
+      'strong bad-faith inference; the keyword pairing is itself probative of intent to deceive',
+    udrpB:
+      '§4(b)(iv) — explicit attempt to attract users via confusion for commercial gain',
+    eutmr:
+      '9(2)(b) clearly engaged given the deceptive composition',
+    reviewIndicators:
+      'check for live phishing content (does the page mimic the brand\'s login flow?); registrar/hosting abuse reports as parallel track to dispute proceedings',
   },
   tld: {
     name: 'TLD variant',
     signSimilarity:
       'the trademark reproduced verbatim under a TLD known for low-cost registration, weak verification, and a high concentration of malicious domains',
-    udrp: 'Squarely within UDRP §4(a) — identical sign on a different TLD',
-    eutmr: 'EUTMR Art. 9(2)(a) applies on the identical-sign limb',
-    recommendation:
-      'UDRP Filing — these matters are typically straightforward to win on the merits',
+    udrpI:
+      'satisfied — identical sign, only the TLD differs (the TLD is generally disregarded for confusing-similarity analysis)',
+    udrpII:
+      'legitimate interest possible but uncommon on these TLDs; requires verification',
+    udrpIII:
+      'bad-faith inference depends on the TLD\'s registration practices and the registrant\'s use',
+    udrpB:
+      '§4(b)(iii) blocking pattern is common; §4(b)(iv) where commercial use exists',
+    eutmr:
+      '9(2)(a) on the identical-sign limb',
+    reviewIndicators:
+      'consider whether the TLD has a UDRP-equivalent dispute mechanism; otherwise escalate via the registry\'s own policy; document registrant\'s portfolio across other low-cost TLDs',
   },
   mixed: {
     name: 'Multi-vector squatting',
     signSimilarity:
       'multiple techniques layered together (combosquatting + keyword injection + suspicious TLD) — deliberate compounding to maximize confusion and evade simple detection',
-    udrp:
-      'The compounding of techniques is itself probative of bad faith under UDRP §4(b)(iv)',
-    eutmr: 'EUTMR Art. 9(2)(b) clearly engaged',
-    recommendation: 'UDRP Filing with detailed pattern documentation in the complaint',
+    udrpI:
+      'satisfied — the mark is recognizable through the layered modifications',
+    udrpII:
+      'legitimate interest extremely improbable given the deliberate technique stacking',
+    udrpIII:
+      'strong bad-faith inference; the technique compounding is itself probative',
+    udrpB:
+      'multiple §4(b) limbs may apply: (iv) confusion for gain, (iii) blocking, (ii) pattern',
+    eutmr:
+      '9(2)(b) clearly engaged; potentially 9(2)(c) if the mark has reputation status (not verified by this tool)',
+    reviewIndicators:
+      'document all detected techniques in a single complaint to demonstrate pattern; check for sibling registrations using the same techniques',
   },
 };
 
@@ -75,17 +128,27 @@ export function generateDemoAnalysis(
   enriched: boolean,
 ): string {
   const p = PROFILES[result.technique] ?? PROFILES.typosquatting;
+
   const goods = enriched
-    ? `Apparent overlap. The fetched site presents content suggestive of operations adjacent to or competing with ${brand}'s primary market, which materially strengthens the goods/services similarity finding.`
-    : `Cannot be assessed — website unreachable at the time of certificate issuance.`;
+    ? `Fetched site presents content suggestive of operations in or adjacent to ${brand}'s primary market. Note: Nice classes, priority dates, and the geographic scope of the registered mark are not assessed by this tool.`
+    : `Cannot be assessed — website unreachable. Flag for re-check once site is live.`;
+
+  const udrpB = p.udrpB ? `\n   §4(b) reference: ${p.udrpB}.` : '';
 
   return `1. SIGN SIMILARITY: ${p.name}. The domain "${result.domain}" employs ${p.signSimilarity} against the trademark "${brand}".
 
-2. GOODS & SERVICES SIMILARITY: ${goods}
+2. GOODS & SERVICES INDICATORS: ${goods}
 
-3. LIKELIHOOD OF CONFUSION: ${confusionLevel(result.score)}. An average consumer is likely to assume affiliation with ${brand}.
+3. LIKELIHOOD OF CONFUSION: ${confusionLevel(result.score)}.
 
-4. LEGAL ASSESSMENT: ${p.udrp}. ${p.eutmr}.
+4. UDRP §4(a) ELEMENTS:
+   (i) ${p.udrpI};
+   (ii) ${p.udrpII};
+   (iii) ${p.udrpIII}.${udrpB}
 
-5. RECOMMENDED ACTION: ${p.recommendation}.`;
+5. EUTMR Art. 9(2) ELEMENTS: ${p.eutmr}.
+
+6. INDICATORS FOR LEGAL REVIEW: ${p.reviewIndicators}.
+
+— Pre-triage memo. Final assessment and any enforcement decision are reserved for a qualified trademark attorney.`;
 }
