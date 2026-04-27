@@ -169,16 +169,6 @@ Open [http://localhost:5173](http://localhost:5173). Two ways to use it:
 If crt.sh is unreachable in live mode (corporate firewall, CORS-proxy outage, etc.), the app
 automatically falls back to the simulated demo feed after three consecutive failed polls.
 
-## Deploy to GitHub Pages
-
-```bash
-npm install gh-pages --save-dev
-npm run build
-npm run deploy
-```
-
-The `vite.config.ts` already sets `base: '/tm-radar/'` for GitHub Pages.
-
 ## Architecture
 
 ```
