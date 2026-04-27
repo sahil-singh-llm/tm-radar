@@ -30,9 +30,9 @@ function buildPrompt(
   result: DetectionResult,
   websiteContent: string | null,
 ): string {
-  return `You are an expert trademark attorney specializing in domain disputes and brand protection.
+  return `You are a pre-triage analyst preparing a memo for review by a qualified trademark attorney. Your output is decision support, not legal advice — any enforcement action requires licensed counsel.
 
-BRAND DATA:
+CASE DATA:
 - Protected trademark: "${brandName}"
 - Suspicious domain: "${result.domain}"
 - Technical similarity score: ${result.score}/100
@@ -44,30 +44,37 @@ ${
 """
 ${websiteContent}
 """
-Incorporate the website content into your analysis.`
+Incorporate this content into the analysis.`
     : `WEBSITE: Unreachable or not yet live — analysis based on domain name only.`
 }
 
-Provide a structured assessment:
+Produce a structured triage memo:
 
-1. SIGN SIMILARITY: How similar is this domain to the trademark and which technique is used?
-   (Typosquatting / Homoglyph / Combosquatting / TLD variant / Keyword injection)
+1. SIGN SIMILARITY: Identify the squatting technique observed
+   (typosquatting / homoglyph / combosquatting / TLD variant / keyword injection / mixed).
 
-2. GOODS & SERVICES SIMILARITY: ${
+2. GOODS & SERVICES INDICATORS: ${
     websiteContent
-      ? 'Based on the website content, does this domain operate in the same industry or offer similar goods/services as the original brand?'
-      : 'Cannot be assessed — website unreachable.'
+      ? 'Characterize the apparent goods/services from the fetched site. Note: Nice classes, priority dates, and the geographic scope of the registered mark are not assessed by this tool.'
+      : 'Cannot be assessed — website unreachable. Flag for re-check once site is live.'
   }
 
-3. LIKELIHOOD OF CONFUSION: Would an average consumer confuse this domain with the original brand?
-   (High / Medium / Low / Cannot be assessed)
+3. LIKELIHOOD OF CONFUSION: indicators (high / medium / low / cannot be assessed).
 
-4. LEGAL ASSESSMENT: Does this likely constitute trademark infringement under UDRP bad faith criteria or EU Trademark Regulation Art. 9 EUTMR?
+4. UDRP §4(a) ELEMENTS — map the observed signals to each element:
+   (i) identical or confusingly similar to a mark in which the complainant has rights
+   (ii) registrant has no rights or legitimate interests in the domain
+   (iii) domain registered and used in bad faith
+   Where applicable, reference §4(b)(i)–(iv) bad-faith circumstances (offer for sale to mark holder, blocking pattern, competitor disruption, commercial gain via confusion).
 
-5. RECOMMENDED ACTION:
-   (UDRP Filing / WIPO Arbitration / Cease & Desist / WHOIS Investigation / Monitor / No action needed)
+5. EUTMR Art. 9(2) ELEMENTS — map signals to:
+   (a) identical sign for identical goods/services
+   (b) similar sign with likelihood of confusion
+   (c) sign taking unfair advantage of a mark with reputation (reputation status not verified by this tool).
 
-Be concise and legally precise. Maximum 8 sentences total.`;
+6. INDICATORS FOR LEGAL REVIEW: Investigative steps and evidence the reviewing attorney should verify before any enforcement decision (e.g. registrant identity via WHOIS/RDAP, prior use evidence, pattern of similar registrations, registrar/hosting jurisdiction).
+
+Frame all conclusions as observations or indicators, not as recommendations or legal conclusions. Maximum 12 sentences total.`;
 }
 
 type AnthropicResponse = {
@@ -89,7 +96,7 @@ async function callAnthropic(
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
-      max_tokens: 500,
+      max_tokens: 700,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
