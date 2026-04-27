@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CrtshClient, type ConnectionStatus } from '../lib/crtsh';
 import { analyzeDomain, type DetectionResult } from '../lib/detection';
 import { fetchWebsiteContent } from '../lib/fetcher';
+import { fetchScreenshotUrl } from '../lib/screenshot';
 import { analyzeWithClaude } from '../lib/claude';
 import { generateDemoAnalysis } from '../lib/demoAnalysis';
 import { StatsBar } from './StatsBar';
@@ -123,6 +124,15 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
     runAnalysis(entry.result);
   };
 
+  const runScreenshot = async (domain: string) => {
+    try {
+      const url = await fetchScreenshotUrl(domain);
+      updateAlert(domain, { screenshotUrl: url, screenshotPending: false });
+    } catch {
+      updateAlert(domain, { screenshotPending: false });
+    }
+  };
+
   useEffect(() => {
     const flush = () => {
       flushTimer.current = null;
@@ -170,6 +180,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
           return;
         }
 
+        const willCapture = !demoMode && result.score >= threshold;
         const newAlert: AlertEntry = {
           result,
           createdAt: Date.now(),
@@ -177,6 +188,8 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
           analysisStage: result.score >= threshold ? 'pending' : 'idle',
           websiteFetched: false,
           websiteUnreachable: false,
+          screenshotUrl: null,
+          screenshotPending: willCapture,
         };
 
         setAlerts((prev) => {
@@ -188,6 +201,9 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
         if (result.score >= threshold) {
           // Kick off analysis async; don't block the stream.
           window.setTimeout(() => runAnalysis(result), 0);
+        }
+        if (willCapture) {
+          window.setTimeout(() => runScreenshot(result.domain), 0);
         }
       }
 

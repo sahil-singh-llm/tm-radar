@@ -59,8 +59,10 @@ enforcement campaign.
    - Combosquatting (brand as substring with affixes)
    - Suspicious-keyword injection (`support`, `login`, `secure`, …)
    - Suspicious-TLD bonus (`.tk`, `.xyz`, `.click`, …)
-3. **Fetch** — Domains scoring above the threshold trigger a website fetch via CORS proxy. Most
-   freshly issued certificates point to nothing yet — that's expected and handled gracefully.
+3. **Fetch** — Domains scoring above the threshold trigger a website-content fetch via CORS
+   proxy and a homepage screenshot via [microlink.io](https://microlink.io)'s free tier (server-
+   side headless-Chrome rendering). Most freshly issued certificates point to nothing yet —
+   that's expected; both fetches handle null gracefully.
 4. **Analyze** — An LLM produces a structured pre-triage memo covering:
    - **Sign similarity** — squatting technique observed (typo / homoglyph / combo / TLD / keyword / mixed)
    - **Goods & services indicators** — apparent operating market, when the site is reachable
@@ -142,6 +144,11 @@ focused on the detection-plus-structured-analysis pipeline.
   deployment, particularly in DE/AT under the RDG.
 - **Cross-provider evaluation** — output quality is currently measured anecdotally. A labeled
   UDRP-decision fixture set comparing Claude / GPT / Gemini / DeepSeek is on the roadmap.
+- **Evidence-grade screenshot capture** — homepage thumbnails come from microlink.io's free
+  tier (~50 requests/day, watermarked CDN URLs). For UDRP/WIPO submissions the registrar
+  expects timestamped, hash-anchored, full-page captures of every visited path; that requires
+  a self-hosted Puppeteer cluster (Cloudflare Workers Browser Rendering or similar) plus a
+  crawl strategy and is explicitly out of scope here.
 
 ## Setup
 
@@ -185,6 +192,7 @@ src/
 │   └── StatsBar.tsx     — counters + connection status
 └── lib/
     ├── crtsh.ts         — crt.sh polling client w/ id-cursor + demo fallback
+    ├── screenshot.ts    — microlink.io homepage capture for evidence preview
     ├── detection.ts     — Levenshtein, combosquatting, keyword, TLD scoring
     ├── homoglyphs.ts    — character substitution map + normalization
     ├── fetcher.ts       — multi-proxy CORS website fetch

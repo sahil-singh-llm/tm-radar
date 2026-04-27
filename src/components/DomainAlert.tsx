@@ -9,6 +9,8 @@ export type AlertEntry = {
   analysisStage: AnalysisStage;
   websiteFetched: boolean;
   websiteUnreachable: boolean;
+  screenshotUrl: string | null;
+  screenshotPending: boolean;
   error?: string;
 };
 
@@ -66,6 +68,14 @@ export function DomainAlert({ entry, onRequestAnalysis }: Props) {
               <ReasonTag key={i} text={r} />
             ))}
           </div>
+
+          {(entry.screenshotUrl || entry.screenshotPending) && (
+            <ScreenshotPreview
+              url={entry.screenshotUrl}
+              pending={entry.screenshotPending}
+              domain={result.domain}
+            />
+          )}
 
           {/* Analysis section */}
           <div className="mt-3 border-t border-border/60 pt-3">
@@ -153,6 +163,41 @@ export function DomainAlert({ entry, onRequestAnalysis }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+function ScreenshotPreview({
+  url,
+  pending,
+  domain,
+}: {
+  url: string | null;
+  pending: boolean;
+  domain: string;
+}) {
+  if (pending && !url) {
+    return (
+      <div className="mt-3 flex items-center gap-2 text-[11px] text-muted font-mono italic">
+        <Spinner small /> capturing homepage screenshot...
+      </div>
+    );
+  }
+  if (!url) return null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-3 block w-fit border border-border hover:border-accent rounded-sm overflow-hidden transition-colors"
+      title={`Open full-size screenshot of ${domain}`}
+    >
+      <img
+        src={url}
+        alt={`Homepage screenshot of ${domain}`}
+        className="block max-w-[280px] w-full h-auto"
+        loading="lazy"
+      />
+    </a>
   );
 }
 
