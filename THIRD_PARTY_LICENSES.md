@@ -51,7 +51,36 @@ Licensed under the MIT License — full text:
 |---------|---------|------------|
 | js-tokens | 4.0.0 | https://github.com/lydell/js-tokens |
 
+**Total: 5 bundled packages** (`react`, `react-dom`, `scheduler`, `loose-envify`, `js-tokens`),
+all under the MIT License.
+
 > Run `npm run licenses` to verify this inventory against the current `package-lock.json`.
+
+### MIT License Text
+
+The following permission notice applies to **all five packages listed in Section A**. Their
+copyright notices appear above; this text reproduces the standard MIT permission notice that
+each package's upstream LICENSE file contains verbatim.
+
+```
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ---
 
@@ -87,31 +116,40 @@ browser to the provider.
 
 | Service | Operator | Purpose | URL |
 |---------|----------|---------|-----|
-| crt.sh | Sectigo | CT log query (substring match against the watched brand) | https://crt.sh |
-| api.allorigins.win | gnuns / open-source community | CORS proxy (primary) | https://allorigins.win |
-| api.codetabs.com | codetabs | CORS proxy (fallback) | https://codetabs.com |
+| crt.sh | Sectigo Limited | Frontend over the public Certificate Transparency log ecosystem (Google, Cloudflare, Let's Encrypt, etc.); substring match against the watched brand | https://crt.sh |
+| api.allorigins.win | gnuns / open-source community | CORS proxy (primary) for browser access to crt.sh and target websites | https://allorigins.win |
+| api.codetabs.com | codetabs | CORS proxy (fallback) for browser access to crt.sh and target websites | https://codetabs.com |
 
-These are free public services without explicit Terms of Service; usage is at-will and without
-warranty.
+`crt.sh` is operated by Sectigo Limited as a public service; the underlying data originates
+from the public Certificate Transparency log ecosystem maintained by Google, Cloudflare,
+Let's Encrypt and other CAs. None of these three services publish formal Terms of Service;
+usage is at-will, subject to undocumented per-IP rate limits, and without warranty. They
+are used in [`src/lib/crtsh.ts`](src/lib/crtsh.ts) and
+[`src/lib/fetcher.ts`](src/lib/fetcher.ts).
 
 ### LLM Inference
 
 | Service | Operator | Purpose | URL |
 |---------|----------|---------|-----|
-| api.anthropic.com | Anthropic | LLM inference (Claude Sonnet 4.6) | https://www.anthropic.com |
+| api.anthropic.com | Anthropic, PBC | LLM inference (default model: Claude Sonnet 4.6) | https://www.anthropic.com |
 
 The user supplies their own Anthropic API key; queries are made directly from the browser to
-Anthropic. Use is governed by Anthropic's terms:
-[anthropic.com/legal](https://www.anthropic.com/legal).
+Anthropic. Use is governed by Anthropic's
+[Commercial Terms of Service](https://www.anthropic.com/legal/commercial-terms) and
+[Usage Policies](https://www.anthropic.com/legal/aup). The application sets the
+`anthropic-dangerous-direct-browser-access: true` header (required for browser-origin requests
+under Anthropic's CORS policy) — production use should proxy through a server-side endpoint
+to avoid exposing API keys client-side at scale.
 
 ### Screenshot Capture
 
 | Service | Operator | Purpose | URL |
 |---------|----------|---------|-----|
-| api.microlink.io | Microlink HQ | Headless-Chrome homepage screenshots (free tier) | https://microlink.io |
+| api.microlink.io | Microlink HQ | Headless-Chrome homepage screenshots (free tier, no API key, ~50 req/day) | https://microlink.io |
 
-Use is governed by Microlink's Terms of Service:
-[microlink.io/tos](https://microlink.io/tos).
+Use is governed by Microlink's [Terms of Service](https://microlink.io/tos). Free-tier usage is
+subject to per-IP rate limits, daily request caps, and the watermarking/branding requirements
+defined in their TOS. Production use beyond these limits requires a paid plan.
 
 ### Web Fonts
 
