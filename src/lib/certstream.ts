@@ -10,6 +10,12 @@ export type CertstreamHandlers = {
 
 const CERTSTREAM_URL = 'wss://certstream.calidog.io';
 const MAX_RECONNECT_ATTEMPTS = 3;
+/**
+ * Public Certstream endpoints have a long history of opening the WebSocket
+ * successfully but then never pushing data. Treat this idle-connected state
+ * as a soft failure and fall back to the simulated feed.
+ */
+const IDLE_TIMEOUT_MS = 30_000;
 
 type CertstreamMessage = {
   message_type?: string;
@@ -26,6 +32,7 @@ export class CertstreamClient {
   private attempt = 0;
   private demoTimer: number | null = null;
   private suspiciousTimer: number | null = null;
+  private idleTimer: number | null = null;
   private stopped = false;
   private status: ConnectionStatus = 'connecting';
 
@@ -43,6 +50,7 @@ export class CertstreamClient {
 
   stop() {
     this.stopped = true;
+    this.clearIdleTimer();
     if (this.ws) {
       try { this.ws.close(); } catch { /* ignore */ }
       this.ws = null;
@@ -55,6 +63,32 @@ export class CertstreamClient {
       window.clearInterval(this.suspiciousTimer);
       this.suspiciousTimer = null;
     }
+  }
+
+  private clearIdleTimer() {
+    if (this.idleTimer !== null) {
+      window.clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+  }
+
+  private armIdleTimer() {
+    this.clearIdleTimer();
+    this.idleTimer = window.setTimeout(() => {
+      // Connection is open but the server isn't pushing. Tear it down and
+      // fall back to the simulated feed so the demo stays usable.
+      if (this.stopped) return;
+      console.warn('[certstream] no frames for', IDLE_TIMEOUT_MS, 'ms — falling back to demo feed');
+      const ws = this.ws;
+      this.ws = null;
+      if (ws) {
+        ws.onclose = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        try { ws.close(); } catch { /* ignore */ }
+      }
+      this.startDemoMode();
+    }, IDLE_TIMEOUT_MS);
   }
 
   private setStatus(status: ConnectionStatus) {
@@ -80,9 +114,11 @@ export class CertstreamClient {
     ws.onopen = () => {
       this.attempt = 0;
       this.setStatus('connected');
+      this.armIdleTimer();
     };
 
     ws.onmessage = (event) => {
+      this.armIdleTimer();
       try {
         const msg: CertstreamMessage = JSON.parse(event.data as string);
         if (msg.message_type !== 'certificate_update') return;
@@ -106,6 +142,7 @@ export class CertstreamClient {
     };
 
     ws.onclose = () => {
+      this.clearIdleTimer();
       if (this.stopped) return;
       this.handleFailure();
     };
