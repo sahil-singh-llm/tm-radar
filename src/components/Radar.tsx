@@ -48,11 +48,14 @@ const TRAIL_RAD = (TRAIL_DEG * Math.PI) / 180;
 const NOISE_LIFE_MS = 5_000;
 const BOOT_DURATION_MS = 1800;
 
+function smoothstep(t: number): number {
+  return t * t * (3 - 2 * t);
+}
+
 function fadeIn(elapsed: number, startMs: number, durMs: number): number {
   if (elapsed < startMs) return 0;
   if (elapsed >= startMs + durMs) return 1;
-  const t = (elapsed - startMs) / durMs;
-  return 1 - Math.pow(1 - t, 3);
+  return smoothstep((elapsed - startMs) / durMs);
 }
 
 function hashTo01(s: string): number {
@@ -120,9 +123,10 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
       const dt = Math.min(0.05, (now - lastTsRef.current) / 1000);
       lastTsRef.current = now;
       const elapsedBoot = now - bootStartedAtRef.current;
-      const speedRamp = fadeIn(elapsedBoot, 700, 1000);
-      sweepRef.current =
-        (sweepRef.current + (speedRamp * dt * Math.PI * 2) / SWEEP_PERIOD_S) % (Math.PI * 2);
+      if (elapsedBoot >= 1100) {
+        sweepRef.current =
+          (sweepRef.current + (dt * Math.PI * 2) / SWEEP_PERIOD_S) % (Math.PI * 2);
+      }
       try {
         draw(now);
       } catch (e) {
@@ -169,7 +173,7 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
     const ringAlphas = [0, 1, 2, 3].map((i) => fadeIn(elapsedBoot, 200 + i * 80, 220));
     const crossAlpha = fadeIn(elapsedBoot, 600, 220);
     const tickAlpha = fadeIn(elapsedBoot, 800, 220);
-    const sweepAlpha = fadeIn(elapsedBoot, 700, 400);
+    const sweepAlpha = fadeIn(elapsedBoot, 1100, 300);
     const centerAlpha = fadeIn(elapsedBoot, 200, 220);
 
     if (bgAlpha > 0) {
