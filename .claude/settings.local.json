@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git -c user.email=\"ssingh@tutanota.de\" -c user.name=\"Sahil Singh\" commit -m \"Initial commit: tm-radar — real-time trademark squatting detector\")",
+      "Bash(git rm *)",
+      "Bash(git -c user.email=\"ssingh@tutanota.de\" -c user.name=\"Sahil Singh\" commit -m \"Remove tsbuildinfo artifacts and add to gitignore\")",
+      "Bash(gh api *)",
+      "Bash(git remote *)",
+      "Bash(git -c user.email=\"ssingh@tutanota.de\" -c user.name=\"Sahil Singh\" commit -m \"feat: scaffold tm-radar real-time trademark squatting detector\")"
+    ]
+  }
+}
