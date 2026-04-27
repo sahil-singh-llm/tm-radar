@@ -41,7 +41,7 @@ export function StatsBar({
         <div className="flex items-center gap-3">
           <Hex />
           <div>
-            <div className="text-sm font-bold tracking-tight">TM Squatting Detector</div>
+            <div className="text-sm font-bold tracking-tight">TM Radar</div>
             <div className="text-[10px] text-muted font-mono uppercase tracking-widest">
               uptime {uptime}
             </div>

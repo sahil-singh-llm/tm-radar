@@ -44,7 +44,7 @@ export function SetupScreen({ initialKey, onStart }: Props) {
           <div className="flex items-center gap-3 mb-8">
             <Logo />
             <div>
-              <h1 className="text-xl font-bold tracking-tight">TM Squatting Detector</h1>
+              <h1 className="text-xl font-bold tracking-tight">TM Radar</h1>
               <p className="text-xs text-muted font-mono uppercase tracking-widest">
                 Real-Time Brand Protection
               </p>
