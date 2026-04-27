@@ -113,6 +113,33 @@ not modeled.
 > only. It does not constitute legal advice. Always consult a qualified trademark attorney
 > before initiating any enforcement action.
 
+## Deliberate Simplifications
+
+The following are intentionally **out of scope**. A production brand-protection product would
+need to address each of them; this tool deliberately stops short to keep the demonstration
+focused on the detection-plus-structured-analysis pipeline.
+
+- **Nice classification** — class similarity (Art. 9(2)(b) EUTMR) is not assessed. The tool
+  cannot tell whether the registrant operates in goods/services classes that conflict with the
+  protected mark.
+- **Reputation protection** — Art. 9(2)(c) EUTMR (well-known marks) is not modeled. The
+  reputation status of the input mark is assumed unknown.
+- **Priority and geographic scope** — first-to-file dates, EU vs. national vs. Madrid scopes,
+  and prior-use defenses are all ignored.
+- **Multi-brand portfolios** — single-brand monitoring only. A real IP department typically
+  watches dozens to hundreds of marks simultaneously.
+- **Mark register verification** — existence, status, and ownership of the input mark are
+  assumed, not checked against EUIPO, USPTO, WIPO Madrid, or any national register.
+- **WHOIS / RDAP enrichment** — registrant identity, prior registrations, and pattern of bad
+  faith would all require integration with WHOIS APIs (most paid or rate-limited).
+- **Persistent case management** — alerts vanish on page refresh. A production product needs a
+  database, audit trail, and evidence packaging for legal proceedings.
+- **UPL / RDG positioning** — the prompt is framed as pre-triage; jurisdiction-specific
+  unauthorized-practice-of-law disclaimers would need to be added before any commercial
+  deployment, particularly in DE/AT under the RDG.
+- **Cross-provider evaluation** — output quality is currently measured anecdotally. A labeled
+  UDRP-decision fixture set comparing Claude / GPT / Gemini / DeepSeek is on the roadmap.
+
 ## Setup
 
 ```bash
