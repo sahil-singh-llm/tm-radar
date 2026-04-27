@@ -7,7 +7,7 @@ import { analyzeWithClaude } from '../lib/claude';
 import { lookupBrandProfile, type BrandProfile } from '../lib/brandProfile';
 import { generateDemoAnalysis } from '../lib/demoAnalysis';
 import { StatsBar } from './StatsBar';
-import { LiveFeed, type FeedEntry } from './LiveFeed';
+import { Radar, type FeedEntry } from './Radar';
 import { DomainAlert, type AlertEntry } from './DomainAlert';
 
 type Props = {
@@ -323,8 +323,8 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
           </div>
         </div>
 
-        {/* LIVE FEED COLUMN */}
-        <LiveFeed entries={feed} />
+        {/* RADAR COLUMN */}
+        <Radar entries={feed} alerts={alerts} brand={brand} />
       </div>
     </div>
   );
