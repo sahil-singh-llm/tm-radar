@@ -45,10 +45,12 @@ campaign.
    - Legal assessment under UDRP bad-faith criteria and EUTMR Art. 9
    - Recommended action (UDRP filing, Cease & Desist, WHOIS investigation, …)
 
-   The current implementation uses **Anthropic Claude Sonnet 4**. Equivalent-quality models from
-   other providers — **OpenAI GPT-4o / GPT-4 Turbo**, **Google Gemini 1.5 Pro / 2.0**,
-   **DeepSeek-V3** — should produce comparable output and are on the roadmap as drop-in
-   alternatives. A benchmark comparing legal-reasoning quality across providers is planned.
+   The current implementation uses **Anthropic Claude Sonnet 4.6**
+   (`claude-sonnet-4-6`, balanced flagship as of April 2026). Equivalent-quality models from
+   other providers — **OpenAI GPT-5.5**, **Google Gemini 3.1 Pro**, **DeepSeek V4** — should
+   produce comparable output and are on the roadmap as drop-in alternatives. For maximum
+   legal-reasoning depth, **Claude Opus 4.7** (`claude-opus-4-7`) is a one-line swap. A benchmark
+   comparing these four flagship models on labeled UDRP cases is planned.
 
 The analysis runs in two stages: an immediate domain-only assessment as soon as the domain is
 flagged, automatically refined with goods & services data once the website is fetched.
