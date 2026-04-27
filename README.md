@@ -149,6 +149,11 @@ focused on the detection-plus-structured-analysis pipeline.
   expects timestamped, hash-anchored, full-page captures of every visited path; that requires
   a self-hosted Puppeteer cluster (Cloudflare Workers Browser Rendering or similar) plus a
   crawl strategy and is explicitly out of scope here.
+- **EU GDPR — Google Fonts in-line loading** — *Inter* and *JetBrains Mono* are loaded
+  directly from Google's CDN, which transmits visitor IPs to Google. The Landgericht München I
+  ruled in *3 O 17493/20* (20 January 2022) that this constitutes an unlawful transfer of
+  personal data without consent. For EU/EEA deployment, fonts should be self-hosted or loaded
+  behind a consent gate. Documented in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md#web-fonts).
 
 ## Setup
 
@@ -222,6 +227,15 @@ across the legal-tech stack:
 The intended audience is IP and brand-protection teams evaluating where AI fits into early-stage
 cybersquatting triage workflows, and Legal Engineering hiring panels.
 
-## License
+## License & Attribution
 
-MIT — see [LICENSE](LICENSE).
+The MIT License (see [LICENSE](LICENSE)) covers all original source code in this repository.
+
+Bundled third-party dependencies retain their respective licenses; external services accessed
+at runtime are governed by their providers' terms. The full inventory — bundled dependencies,
+build-time tooling, runtime services (crt.sh, Anthropic, Microlink, Google Fonts, …),
+algorithms and data sources — is documented in
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+Run `npm run licenses` to verify the production-bundle inventory against the current
+`package-lock.json`.
