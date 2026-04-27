@@ -4,6 +4,7 @@ import { analyzeDomain, type DetectionResult } from '../lib/detection';
 import { fetchWebsiteContent } from '../lib/fetcher';
 import { fetchScreenshotUrl } from '../lib/screenshot';
 import { analyzeWithClaude } from '../lib/claude';
+import { lookupBrandProfile, type BrandProfile } from '../lib/brandProfile';
 import { generateDemoAnalysis } from '../lib/demoAnalysis';
 import { StatsBar } from './StatsBar';
 import { LiveFeed, type FeedEntry } from './LiveFeed';
@@ -30,8 +31,12 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
   const [seen, setSeen] = useState(0);
   const [perMinute, setPerMinute] = useState(0);
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'medium'>('all');
+  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
 
   const startedAt = useRef(Date.now()).current;
+
+  const brandProfileRef = useRef<BrandProfile | null>(null);
+  brandProfileRef.current = brandProfile;
 
   // Buffers for batched UI updates
   const feedBuf = useRef<FeedEntry[]>([]);
@@ -64,7 +69,8 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
       }
 
       // Stage 1 — domain-only analysis
-      const stage1 = await analyzeWithClaude(apiKey, brand, result, null);
+      const profile = brandProfileRef.current;
+      const stage1 = await analyzeWithClaude(apiKey, brand, result, null, profile);
       updateAlert(result.domain, {
         analysis: stage1,
         analysisStage: 'domain-only',
@@ -81,7 +87,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
         return;
       }
 
-      const stage2 = await analyzeWithClaude(apiKey, brand, result, content);
+      const stage2 = await analyzeWithClaude(apiKey, brand, result, content, profile);
       updateAlert(result.domain, {
         analysis: stage2,
         analysisStage: 'enriched',
@@ -132,6 +138,21 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
       updateAlert(domain, { screenshotPending: false });
     }
   };
+
+  useEffect(() => {
+    if (demoMode) {
+      setBrandProfile(null);
+      return;
+    }
+    let cancelled = false;
+    setBrandProfile(null);
+    lookupBrandProfile(brand).then((p) => {
+      if (!cancelled) setBrandProfile(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [brand, demoMode]);
 
   useEffect(() => {
     const flush = () => {
@@ -257,6 +278,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
         perMinute={perMinute}
         startedAt={startedAt}
         onStop={onStop}
+        brandProfile={brandProfile}
       />
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] overflow-hidden">
@@ -293,6 +315,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
                 <DomainAlert
                   key={a.result.domain}
                   entry={a}
+                  brand={brand}
                   onRequestAnalysis={requestAnalysis}
                 />
               ))

@@ -53,17 +53,21 @@ enforcement campaign.
    certificates on each subsequent poll. This is brand-targeted polling rather than a
    firehose — drastically lower noise, and resilient (Calidog's public Certstream WebSocket has
    been intermittently down since 2023).
-2. **Score** — Each new domain is run through a multi-signal detection engine:
+2. **Brand context** — On startup, the app does a single Wikidata SPARQL lookup against the
+   brand string and, if a matching business/brand entity exists, surfaces its industry,
+   inception year, and country to the LLM prompt as community-curated background context —
+   explicitly not a register-verified right.
+3. **Score** — Each new domain is run through a multi-signal detection engine:
    - Normalized Levenshtein distance against the brand name
    - Homoglyph character substitution (Cyrillic, accented Latin, digit lookalikes)
    - Combosquatting (brand as substring with affixes)
    - Suspicious-keyword injection (`support`, `login`, `secure`, …)
    - Suspicious-TLD bonus (`.tk`, `.xyz`, `.click`, …)
-3. **Fetch** — Domains scoring above the threshold trigger a website-content fetch via CORS
+4. **Fetch** — Domains scoring above the threshold trigger a website-content fetch via CORS
    proxy and a homepage screenshot via [microlink.io](https://microlink.io)'s free tier (server-
    side headless-Chrome rendering). Most freshly issued certificates point to nothing yet —
    that's expected; both fetches handle null gracefully.
-4. **Analyze** — An LLM produces a structured pre-triage memo covering:
+5. **Analyze** — An LLM produces a structured pre-triage memo covering:
    - **Sign similarity** — squatting technique observed (typo / homoglyph / combo / TLD / keyword / mixed)
    - **Goods & services indicators** — apparent operating market, when the site is reachable
    - **Likelihood of confusion** — high / medium / low / cannot be assessed
@@ -133,8 +137,12 @@ focused on the detection-plus-structured-analysis pipeline.
   and prior-use defenses are all ignored.
 - **Multi-brand portfolios** — single-brand monitoring only. A real IP department typically
   watches dozens to hundreds of marks simultaneously.
-- **Mark register verification** — existence, status, and ownership of the input mark are
-  assumed, not checked against EUIPO, USPTO, WIPO Madrid, or any national register.
+- **Mark register verification** — Wikidata is now used for soft brand context only
+  (industry, inception year, country) to give the LLM concrete background on the watched
+  brand. No official trademark register (EUIPO, USPTO, WIPO Madrid, DPMA, or any national
+  office) is queried, and Wikidata is explicitly not a register source. Register
+  verification — existence, status, ownership, classes, priority — remains the
+  responsibility of the reviewing attorney before any filing.
 - **WHOIS / RDAP enrichment** — registrant identity, prior registrations, and pattern of bad
   faith would all require integration with WHOIS APIs (most paid or rate-limited).
 - **Persistent case management** — alerts vanish on page refresh. A production product needs a
@@ -154,6 +162,14 @@ focused on the detection-plus-structured-analysis pipeline.
   ruled in *3 O 17493/20* (20 January 2022) that this constitutes an unlawful transfer of
   personal data without consent. For EU/EEA deployment, fonts should be self-hosted or loaded
   behind a consent gate. Documented in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md#web-fonts).
+
+## Roadmap
+
+- **RDAP enrichment** — registrant identity, registrar, and creation date pulled per alert via the standardized RDAP protocol.
+- **Wayback first-archive timestamp** — earliest Internet Archive capture of the suspicious domain as a registration-age signal.
+- **URLhaus reputation flag** — cross-check each flagged domain against abuse.ch's URLhaus malware/phishing feed.
+- **DNS / MX active-mailflow indicator** — surface MX-record presence and resolver liveness as a "weaponized vs. parked" signal.
+- Official trademark register integration (TMview / EUIPO eSearch / USPTO TSDR) — pending stable public APIs with CORS support.
 
 ## Setup
 
@@ -191,7 +207,8 @@ src/
     ├── detection.ts     — Levenshtein, combosquatting, keyword, TLD scoring
     ├── homoglyphs.ts    — character substitution map + normalization
     ├── fetcher.ts       — multi-proxy CORS website fetch
-    └── claude.ts        — two-stage rate-limited Anthropic API client
+    ├── claude.ts        — two-stage rate-limited Anthropic API client
+    └── brandProfile.ts  — Wikidata SPARQL brand-context lookup
 ```
 
 ## Performance Notes

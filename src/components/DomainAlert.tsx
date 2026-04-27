@@ -16,10 +16,11 @@ export type AlertEntry = {
 
 type Props = {
   entry: AlertEntry;
+  brand: string;
   onRequestAnalysis: (domain: string) => void;
 };
 
-export function DomainAlert({ entry, onRequestAnalysis }: Props) {
+export function DomainAlert({ entry, brand, onRequestAnalysis }: Props) {
   const { result, analysis, analysisStage, websiteFetched, websiteUnreachable, error } = entry;
   const [expanded, setExpanded] = useState(result.severity === 'critical' || result.severity === 'high');
   const [copied, setCopied] = useState(false);
@@ -148,6 +149,10 @@ export function DomainAlert({ entry, onRequestAnalysis }: Props) {
             <ActionButton
               href={`https://whois.domaintools.com/${encodeURIComponent(result.domain)}`}
               label="WHOIS"
+            />
+            <ActionButton
+              href={`https://www.tmdn.org/tmview/?text=${encodeURIComponent(brand)}`}
+              label="TMview"
             />
             <ActionButton
               href="https://www.wipo.int/amc/en/domains/"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ConnectionStatus } from '../lib/crtsh';
+import type { BrandProfile } from '../lib/brandProfile';
 
 type Props = {
   brand: string;
@@ -12,6 +13,7 @@ type Props = {
   perMinute: number;
   startedAt: number;
   onStop: () => void;
+  brandProfile?: BrandProfile | null;
 };
 
 export function StatsBar({
@@ -25,6 +27,7 @@ export function StatsBar({
   perMinute,
   startedAt,
   onStop,
+  brandProfile,
 }: Props) {
   const [now, setNow] = useState(Date.now());
 
@@ -54,6 +57,15 @@ export function StatsBar({
           <span className="text-xs text-muted uppercase tracking-wider">Watching</span>
           <span className="font-mono text-base text-accent font-semibold">"{brand}"</span>
         </div>
+
+        {brandProfile && (
+          <span
+            className="text-[10px] text-muted font-mono uppercase tracking-widest hidden md:inline"
+            title="Brand context from Wikidata — community-curated, not a register source"
+          >
+            {brandProfile.label} · {brandProfile.industry ?? '—'} · {brandProfile.inception ?? '—'} · Wikidata
+          </span>
+        )}
 
         <div className="flex-1" />
 

@@ -1,4 +1,5 @@
 import type { DetectionResult } from './detection';
+import type { BrandProfile } from './brandProfile';
 
 export type AnalysisStage = 'idle' | 'pending' | 'domain-only' | 'enriched' | 'unreachable' | 'error';
 
@@ -29,7 +30,19 @@ function buildPrompt(
   brandName: string,
   result: DetectionResult,
   websiteContent: string | null,
+  brandProfile: BrandProfile | null,
 ): string {
+  const brandContextBlock = brandProfile
+    ? `BRAND CONTEXT (community-curated via Wikidata, NOT a register source — treat as background only, not as proof of rights):
+- Mark holder / brand entity: ${brandProfile.label}
+- Description: ${brandProfile.description ?? '—'}
+- Industry: ${brandProfile.industry ?? '—'}
+- Founded / inception: ${brandProfile.inception ?? '—'}
+- Country: ${brandProfile.country ?? '—'}
+
+`
+    : '';
+
   return `You are a pre-triage analyst preparing a memo for review by a qualified trademark attorney. Your output is decision support, not legal advice — any enforcement action requires licensed counsel.
 
 CASE DATA:
@@ -38,7 +51,7 @@ CASE DATA:
 - Technical similarity score: ${result.score}/100
 - Detected patterns: ${result.reasons.join(', ')}
 
-${
+${brandContextBlock}${
   websiteContent
     ? `WEBSITE CONTENT (automatically fetched):
 """
@@ -66,6 +79,7 @@ Produce a structured triage memo:
    (ii) registrant has no rights or legitimate interests in the domain
    (iii) domain registered and used in bad faith
    Where applicable, reference §4(b)(i)–(iv) bad-faith circumstances (offer for sale to mark holder, blocking pattern, competitor disruption, commercial gain via confusion).
+   If brand context is provided above, use it to characterize the protected mark concretely; do not treat it as a register-verified right.
 
 5. EUTMR Art. 9(2) ELEMENTS — map signals to:
    (a) identical sign for identical goods/services
@@ -122,7 +136,8 @@ export async function analyzeWithClaude(
   brandName: string,
   result: DetectionResult,
   websiteContent: string | null,
+  brandProfile: BrandProfile | null = null,
 ): Promise<string> {
-  const prompt = buildPrompt(brandName, result, websiteContent);
+  const prompt = buildPrompt(brandName, result, websiteContent, brandProfile);
   return rateLimited(() => callAnthropic(apiKey, prompt));
 }
