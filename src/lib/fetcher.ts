@@ -1,6 +1,6 @@
 const CORS_PROXIES: Array<(url: string) => string> = [
   (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`,
 ];
 
 export async function fetchWebsiteContent(domain: string): Promise<string | null> {
