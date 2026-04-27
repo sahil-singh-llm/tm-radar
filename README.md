@@ -167,7 +167,7 @@ npm run build
 npm run deploy
 ```
 
-The `vite.config.ts` already sets `base: '/trademark-squatting-detector/'` for GitHub Pages.
+The `vite.config.ts` already sets `base: '/tm-radar/'` for GitHub Pages.
 
 ## Architecture
 
@@ -196,6 +196,30 @@ capped at 24 entries; the alerts list at 60.
 
 Claude calls are serialized with a 2-second minimum gap to stay within free-tier rate limits.
 
+## Scope and Audience
+
+This is a Legal Engineering **showcase** rather than a commercial brand-protection product.
+Production trademark monitoring at scale requires capabilities that are explicitly out of scope
+here (see "Deliberate Simplifications"): mark-register integration with Nice classes, priority
+and geographic scope, multi-brand portfolios, WHOIS/RDAP enrichment, persistent case management
+with audit trails and evidence packaging, and jurisdiction-specific UPL/RDG positioning of any
+LLM-generated output.
+
+The project deliberately stops at the proof-of-concept layer to demonstrate end-to-end thinking
+across the legal-tech stack:
+
+- **Real-time data ingest** — Certificate Transparency log streaming as a signal source
+- **Signal-based detection** — multi-vector heuristics (Levenshtein, homoglyph, combosquatting,
+  keyword injection, suspicious-TLD)
+- **Structured prompting** — two-stage LLM analysis with explicit UDRP §4 / EUTMR Art. 9 schema
+  rather than free-form "bad faith" associations
+- **Legal framing** — output positioned as pre-triage memo for attorney review, not as
+  automated legal advice
+- **Limit awareness** — explicit list of what the tool does *not* model
+
+The intended audience is IP and brand-protection teams evaluating where AI fits into early-stage
+cybersquatting triage workflows, and Legal Engineering hiring panels.
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
