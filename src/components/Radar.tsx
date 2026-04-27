@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import type { Severity } from '../lib/detection';
 import type { AlertEntry } from './DomainAlert';
 
@@ -46,6 +46,14 @@ const SWEEP_PERIOD_S = 6;
 const TRAIL_DEG = 70;
 const TRAIL_RAD = (TRAIL_DEG * Math.PI) / 180;
 const NOISE_LIFE_MS = 5_000;
+const BOOT_DURATION_MS = 1800;
+
+function fadeIn(elapsed: number, startMs: number, durMs: number): number {
+  if (elapsed < startMs) return 0;
+  if (elapsed >= startMs + durMs) return 1;
+  const t = (elapsed - startMs) / durMs;
+  return 1 - Math.pow(1 - t, 3);
+}
 
 function hashTo01(s: string): number {
   let h = 2166136261 >>> 0;
@@ -68,7 +76,9 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
   const rafRef = useRef<number | null>(null);
   const sweepRef = useRef(0);
   const lastTsRef = useRef(Date.now());
+  const bootStartedAtRef = useRef(Date.now());
   const dprRef = useRef(1);
+  const [bootLabel, setBootLabel] = useState<string | null>('calibrating');
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
@@ -109,7 +119,10 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
       const now = Date.now();
       const dt = Math.min(0.05, (now - lastTsRef.current) / 1000);
       lastTsRef.current = now;
-      sweepRef.current = (sweepRef.current + (dt * Math.PI * 2) / SWEEP_PERIOD_S) % (Math.PI * 2);
+      const elapsedBoot = now - bootStartedAtRef.current;
+      const speedRamp = fadeIn(elapsedBoot, 700, 1000);
+      sweepRef.current =
+        (sweepRef.current + (speedRamp * dt * Math.PI * 2) / SWEEP_PERIOD_S) % (Math.PI * 2);
       try {
         draw(now);
       } catch (e) {
@@ -121,6 +134,16 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const t1 = window.setTimeout(() => setBootLabel(`tracking "${brand}"`), 700);
+    const t2 = window.setTimeout(() => setBootLabel(null), 1500);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function draw(now: number) {
@@ -140,68 +163,106 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
 
     ctx.clearRect(0, 0, W, H);
 
-    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-    bg.addColorStop(0, 'rgba(37, 99, 235, 0.07)');
-    bg.addColorStop(0.7, 'rgba(37, 99, 235, 0.018)');
-    bg.addColorStop(1, 'rgba(37, 99, 235, 0)');
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fill();
+    const elapsedBoot = now - bootStartedAtRef.current;
+    const isBooting = elapsedBoot < BOOT_DURATION_MS;
+    const bgAlpha = fadeIn(elapsedBoot, 0, 400);
+    const ringAlphas = [0, 1, 2, 3].map((i) => fadeIn(elapsedBoot, 200 + i * 80, 220));
+    const crossAlpha = fadeIn(elapsedBoot, 600, 220);
+    const tickAlpha = fadeIn(elapsedBoot, 800, 220);
+    const sweepAlpha = fadeIn(elapsedBoot, 700, 400);
+    const centerAlpha = fadeIn(elapsedBoot, 200, 220);
 
-    ctx.strokeStyle = 'rgba(30, 45, 74, 0.85)';
-    ctx.lineWidth = 1 * dpr;
-    for (const f of [0.25, 0.5, 0.75, 1]) {
+    if (bgAlpha > 0) {
+      ctx.globalAlpha = bgAlpha;
+      const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+      bg.addColorStop(0, 'rgba(37, 99, 235, 0.07)');
+      bg.addColorStop(0.7, 'rgba(37, 99, 235, 0.018)');
+      bg.addColorStop(1, 'rgba(37, 99, 235, 0)');
+      ctx.fillStyle = bg;
       ctx.beginPath();
-      ctx.arc(cx, cy, R * f, 0, Math.PI * 2);
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.lineWidth = 1 * dpr;
+    for (let i = 0; i < 4; i++) {
+      const a = ringAlphas[i];
+      if (a <= 0) continue;
+      ctx.strokeStyle = `rgba(30, 45, 74, ${0.85 * a})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * (i + 1) * 0.25, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    ctx.strokeStyle = 'rgba(30, 45, 74, 0.6)';
-    ctx.beginPath();
-    ctx.moveTo(cx - R, cy);
-    ctx.lineTo(cx + R, cy);
-    ctx.moveTo(cx, cy - R);
-    ctx.lineTo(cx, cy + R);
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba(100, 116, 139, 0.5)';
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-      const r1 = R * 0.96;
-      const r2 = R * 1.0;
+    if (crossAlpha > 0) {
+      ctx.strokeStyle = `rgba(30, 45, 74, ${0.6 * crossAlpha})`;
       ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
-      ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+      ctx.moveTo(cx - R, cy);
+      ctx.lineTo(cx + R, cy);
+      ctx.moveTo(cx, cy - R);
+      ctx.lineTo(cx, cy + R);
       ctx.stroke();
+    }
+
+    if (tickAlpha > 0) {
+      ctx.strokeStyle = `rgba(100, 116, 139, ${0.5 * tickAlpha})`;
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+        const r1 = R * 0.96;
+        const r2 = R * 1.0;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+        ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+        ctx.stroke();
+      }
     }
 
     const sweep = sweepRef.current;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(sweep - Math.PI / 2);
-    for (let s = 0; s < TRAIL_DEG; s += 2) {
-      const a0 = -((s + 2) * Math.PI) / 180;
-      const a1 = -(s * Math.PI) / 180;
-      const t = s / TRAIL_DEG;
-      const alpha = Math.pow(1 - t, 1.7) * 0.26;
-      ctx.fillStyle = `rgba(56, 189, 248, ${alpha})`;
+    if (sweepAlpha > 0) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(sweep - Math.PI / 2);
+      for (let s = 0; s < TRAIL_DEG; s += 2) {
+        const a0 = -((s + 2) * Math.PI) / 180;
+        const a1 = -(s * Math.PI) / 180;
+        const t = s / TRAIL_DEG;
+        const alpha = Math.pow(1 - t, 1.7) * 0.26 * sweepAlpha;
+        ctx.fillStyle = `rgba(56, 189, 248, ${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, R, a0, a1);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.shadowColor = `rgba(186, 230, 253, ${0.7 * sweepAlpha})`;
+      ctx.shadowBlur = 6 * dpr;
+      ctx.strokeStyle = `rgba(186, 230, 253, ${0.98 * sweepAlpha})`;
+      ctx.lineWidth = 1.4 * dpr;
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.arc(0, 0, R, a0, a1);
-      ctx.closePath();
-      ctx.fill();
+      ctx.lineTo(R, 0);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
     }
-    ctx.shadowColor = 'rgba(186, 230, 253, 0.7)';
-    ctx.shadowBlur = 6 * dpr;
-    ctx.strokeStyle = 'rgba(186, 230, 253, 0.98)';
-    ctx.lineWidth = 1.4 * dpr;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(R, 0);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.restore();
+
+    if (isBooting) {
+      if (centerAlpha > 0) {
+        ctx.globalAlpha = centerAlpha;
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+        ctx.lineWidth = 1.2 * dpr;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4 * dpr, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.95)';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 1.6 * dpr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      return;
+    }
 
     const ents = entriesRef.current;
     for (const e of ents) {
@@ -310,6 +371,13 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
 
       <div ref={containerRef} className="relative w-full aspect-square select-none">
         <canvas ref={canvasRef} className="block w-full h-full" />
+        <span
+          className={`pointer-events-none absolute bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-widest text-sky-300/85 transition-opacity duration-300 ${
+            bootLabel ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          ▸ {bootLabel ?? ''}
+        </span>
         <span className="pointer-events-none absolute top-1 left-1/2 -translate-x-1/2 text-[9px] font-mono text-muted/60 tracking-widest">
           N
         </span>
