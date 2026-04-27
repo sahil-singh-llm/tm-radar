@@ -1,10 +1,13 @@
-# Trademark Squatting Detector
+# tm-radar — Trademark Squatting Detector
 
 Real-time brand protection through Certificate Transparency log monitoring.
 
+**▶ Live demo:** https://sahil-singh-llm.github.io/tm-radar/ — runs entirely in your browser. The
+"Try demo" button gives you a full pipeline walkthrough without an API key.
+
 A purely client-side React application that watches every TLS certificate issued anywhere on the
 public internet, scores each new domain against a brand name you care about, and — for the truly
-suspicious ones — fetches the live website and asks Claude for a structured legal assessment.
+suspicious ones — fetches the live website and asks an LLM for a structured legal assessment.
 
 ## What is Trademark Squatting?
 
@@ -35,12 +38,17 @@ campaign.
    - Suspicious-TLD bonus (`.tk`, `.xyz`, `.click`, …)
 3. **Fetch** — Domains scoring above the threshold trigger a website fetch via CORS proxy. Most
    freshly issued certificates point to nothing yet — that's expected and handled gracefully.
-4. **Analyze** — Claude (Sonnet 4) is asked for a structured assessment covering:
+4. **Analyze** — An LLM is asked for a structured assessment covering:
    - Sign similarity and squatting technique
    - Goods & services similarity (when the website is reachable)
    - Likelihood of confusion for the average consumer
    - Legal assessment under UDRP bad-faith criteria and EUTMR Art. 9
    - Recommended action (UDRP filing, Cease & Desist, WHOIS investigation, …)
+
+   The current implementation uses **Anthropic Claude Sonnet 4**. Equivalent-quality models from
+   other providers — **OpenAI GPT-4o / GPT-4 Turbo**, **Google Gemini 1.5 Pro / 2.0**,
+   **DeepSeek-V3** — should produce comparable output and are on the roadmap as drop-in
+   alternatives. A benchmark comparing legal-reasoning quality across providers is planned.
 
 The analysis runs in two stages: an immediate domain-only assessment as soon as the domain is
 flagged, automatically refined with goods & services data once the website is fetched.
@@ -76,16 +84,17 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173), enter:
+Open [http://localhost:5173](http://localhost:5173). Two ways to use it:
 
-- a brand name (e.g. `nike`, `paypal`, `spotify`)
-- your [Anthropic API key](https://console.anthropic.com) — stored only in `sessionStorage`,
-  never transmitted to any server other than Anthropic's
-- a similarity threshold (default 80 — domains at or above this score trigger automatic AI
-  analysis)
+- **Live mode** — enter a brand name plus an [Anthropic API key](https://console.anthropic.com)
+  (key is stored only in `sessionStorage`, never transmitted anywhere except to Anthropic). Pick a
+  similarity threshold (default 80). Real CT-log stream, real LLM analysis.
+- **Demo mode** — click "Try demo (no API key required)" on the setup screen. Simulated
+  certificate stream + canned legal analyses for each detection technique. Full UX walkthrough
+  without an account anywhere.
 
-If the Certstream WebSocket can't be reached (corporate firewall, etc.), the app automatically
-falls back to a simulated demo feed so you can still see the full pipeline end-to-end.
+If the Certstream WebSocket can't be reached in live mode (corporate firewall, etc.), the app
+automatically falls back to the simulated demo feed.
 
 ## Deploy to GitHub Pages
 
