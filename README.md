@@ -2,9 +2,9 @@
 
 **Real-time trademark squatting detection through Certificate Transparency logs + AI-powered legal analysis.**
 
+[![Live Demo](https://img.shields.io/badge/▶-Live_Demo-2563EB)](https://sahil-singh-llm.github.io/tm-radar/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Legal Tech](https://img.shields.io/badge/Legal_Tech-UDRP_%2B_EUTMR-7C3AED)](#what-this-tool-detects-cybersquatting)
-[![Live Demo](https://img.shields.io/badge/▶-Live_Demo-2563EB)](https://sahil-singh-llm.github.io/tm-radar/)
 [![100% Client-Side](https://img.shields.io/badge/100%25-Client--Side-22C55E)](#)
 [![Deployed on GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-181717?logo=github&logoColor=white)](https://sahil-singh-llm.github.io/tm-radar/)
 
