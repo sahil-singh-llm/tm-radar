@@ -10,13 +10,11 @@
 
 ---
 
-TM Radar is a purely client-side React application that watches every TLS certificate issued
-anywhere on the public internet, scores each new domain against a brand name you care about, and —
-for the truly suspicious ones — fetches the live website and produces a structured pre-triage memo
-mapping the observed signals to UDRP §4 and EUTMR Art. 9 elements for attorney review.
-
-**▶ Live demo:** https://sahil-singh-llm.github.io/tm-radar/ — runs entirely in your browser. The
-"Try demo" button gives you a full pipeline walkthrough without an API key.
+TM Radar is a purely client-side React application that polls public Certificate Transparency
+logs for newly issued TLS certificates matching a watched brand, scores each domain against
+cybersquatting heuristics, and — for the truly suspicious ones — fetches the live website and
+produces a structured pre-triage memo mapping the observed signals to UDRP §4 and EUTMR Art. 9
+elements for attorney review.
 
 ## What this tool detects: cybersquatting
 
@@ -75,13 +73,9 @@ enforcement campaign.
      jurisdiction)
 
    The output is framed as decision support for a qualified trademark attorney, not as legal
-   advice or an enforcement recommendation. The current implementation uses
-   **Anthropic Claude Sonnet 4.6** (`claude-sonnet-4-6`, balanced flagship as of April 2026).
-   Equivalent-quality models from other providers — **OpenAI GPT-5.5**, **Google Gemini 3.1
-   Pro**, **DeepSeek V4** — should produce comparable output and are on the roadmap as drop-in
-   alternatives. For maximum legal-reasoning depth, **Claude Opus 4.7** (`claude-opus-4-7`) is a
-   one-line swap. A benchmark comparing these four flagship models on labeled UDRP cases is
-   planned.
+   advice or an enforcement recommendation. The current implementation uses **Anthropic Claude
+   Sonnet 4.6**; the LLM client is provider-agnostic, with Claude Opus 4.7, GPT-5.5, Gemini 3.1
+   Pro, and DeepSeek V4 as drop-in alternatives.
 
 The analysis runs in two stages: an immediate domain-only assessment as soon as the domain is
 flagged, automatically refined with goods & services data once the website is fetched.
@@ -100,19 +94,10 @@ Severity bands: `low` 50–64, `medium` 65–79, `high` 80–91, `critical` 92+.
 
 ## Legal Framework
 
-The prompt structures the LLM output around concrete provisions rather than asking the model to
-free-associate "bad faith":
-
-- **UDRP §4(a)(i)–(iii)** — the three elements complainants must prove (confusing similarity,
-  no legitimate interest, registration and use in bad faith)
-- **UDRP §4(b)(i)–(iv)** — non-exhaustive bad-faith circumstances (offer for sale, blocking
-  pattern, competitor disruption, commercial gain via confusion)
-- **EUTMR Art. 9(2)(a)–(c)** — identical / similar / reputation-based infringement limbs
-- **WIPO Arbitration** as the principal forum for UDRP proceedings
-
-The output is framed as a *pre-triage memo*: structured observations and indicators for review
-by a qualified trademark attorney. See "Deliberate Simplifications" below for what is and is
-not modeled.
+The prompt anchors the LLM output to concrete provisions — UDRP §4(a)(i)–(iii) elements,
+§4(b)(i)–(iv) bad-faith circumstances, EUTMR Art. 9(2)(a)–(c) infringement limbs, with WIPO as
+the principal UDRP forum — rather than free-associating around "bad faith". See "Deliberate
+Simplifications" for what is *not* modeled.
 
 > ⚠ This tool identifies *potential* indicators of cybersquatting for investigative purposes
 > only. It does not constitute legal advice. Always consult a qualified trademark attorney
@@ -133,12 +118,10 @@ focused on the detection-plus-structured-analysis pipeline.
   and prior-use defenses are all ignored.
 - **Multi-brand portfolios** — single-brand monitoring only. A real IP department typically
   watches dozens to hundreds of marks simultaneously.
-- **Mark register verification** — Wikidata is now used for soft brand context only
-  (industry, inception year, country) to give the LLM concrete background on the watched
-  brand. No official trademark register (EUIPO, USPTO, WIPO Madrid, DPMA, or any national
-  office) is queried, and Wikidata is explicitly not a register source. Register
-  verification — existence, status, ownership, classes, priority — remains the
-  responsibility of the reviewing attorney before any filing.
+- **Mark register verification** — Wikidata is queried only for soft brand context (industry,
+  inception year, country); no official register (EUIPO, USPTO, WIPO Madrid, DPMA) is consulted.
+  Register verification — existence, status, ownership, classes, priority — remains attorney
+  work.
 - **WHOIS / RDAP enrichment** — registrant identity, prior registrations, and pattern of bad
   faith would all require integration with WHOIS APIs (most paid or rate-limited).
 - **Persistent case management** — alerts vanish on page refresh. A production product needs a
@@ -195,7 +178,7 @@ src/
 │   ├── SetupScreen.tsx  — onboarding form + explainer
 │   ├── Monitor.tsx      — orchestrates stream → detection → analysis
 │   ├── DomainAlert.tsx  — single flagged domain card
-│   ├── LiveFeed.tsx     — scrolling feed of all observed domains
+│   ├── Radar.tsx        — animated radar visualization of observed + flagged domains
 │   └── StatsBar.tsx     — counters + connection status
 └── lib/
     ├── crtsh.ts         — crt.sh polling client w/ id-cursor + demo fallback
@@ -204,41 +187,21 @@ src/
     ├── homoglyphs.ts    — character substitution map + normalization
     ├── fetcher.ts       — multi-proxy CORS website fetch
     ├── claude.ts        — two-stage rate-limited Anthropic API client
-    └── brandProfile.ts  — Wikidata SPARQL brand-context lookup
+    ├── brandProfile.ts  — Wikidata SPARQL brand-context lookup
+    └── demoAnalysis.ts  — canned legal analyses for the no-API-key demo flow
 ```
-
-## Performance Notes
-
-Brand-targeted crt.sh polling typically returns a small set of new certificates per 30-second
-window — much lower volume than a firehose, and almost all signal. The Monitor still buffers
-incoming domains and flushes state every 100 ms (legacy from the Certstream firehose design;
-cheap to keep). The live-feed list is capped at 24 entries; the alerts list at 60.
-
-Claude calls are serialized with a 2-second minimum gap to stay within free-tier rate limits.
 
 ## Scope and Audience
 
-This is a Legal Engineering **showcase** rather than a commercial brand-protection product.
-Production trademark monitoring at scale requires capabilities that are explicitly out of scope
-here (see "Deliberate Simplifications"): mark-register integration with Nice classes, priority
-and geographic scope, multi-brand portfolios, WHOIS/RDAP enrichment, persistent case management
-with audit trails and evidence packaging, and jurisdiction-specific UPL/RDG positioning of any
-LLM-generated output.
+This is a Legal Engineering **showcase**, not a commercial brand-protection product — see
+[Deliberate Simplifications](#deliberate-simplifications) for what production monitoring would
+additionally require. The project deliberately stops at the proof-of-concept layer to
+demonstrate end-to-end thinking across the legal-tech stack: real-time CT-log ingest,
+multi-vector detection heuristics, structured legal prompting against concrete UDRP / EUTMR
+provisions, attorney-facing output framing, and explicit limit awareness.
 
-The project deliberately stops at the proof-of-concept layer to demonstrate end-to-end thinking
-across the legal-tech stack:
-
-- **Real-time data ingest** — Certificate Transparency log streaming as a signal source
-- **Signal-based detection** — multi-vector heuristics (Levenshtein, homoglyph, combosquatting,
-  keyword injection, suspicious-TLD)
-- **Structured prompting** — two-stage LLM analysis with explicit UDRP §4 / EUTMR Art. 9 schema
-  rather than free-form "bad faith" associations
-- **Legal framing** — output positioned as pre-triage memo for attorney review, not as
-  automated legal advice
-- **Limit awareness** — explicit list of what the tool does *not* model
-
-The intended audience is IP and brand-protection teams evaluating where AI fits into early-stage
-cybersquatting triage workflows, and Legal Engineering hiring panels.
+Intended audience: IP and brand-protection teams evaluating where AI fits into early-stage
+cybersquatting triage, and Legal Engineering hiring panels.
 
 ## License & Attribution
 
