@@ -80,6 +80,10 @@ enforcement campaign.
 The analysis runs in two stages: an immediate domain-only assessment as soon as the domain is
 flagged, automatically refined with goods & services data once the website is fetched.
 
+**Visualization.** Observed and flagged domains plot on a live radar sweep — positioned by
+severity ring (critical innermost, low outermost), color-coded by severity band. Gives an
+at-a-glance read of detection volume and threat distribution without scrolling alert cards.
+
 ## Detection Algorithms
 
 | Signal | Description | Score range |
