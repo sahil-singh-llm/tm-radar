@@ -73,9 +73,9 @@ enforcement campaign.
      jurisdiction)
 
    The output is framed as decision support for a qualified trademark attorney, not as legal
-   advice or an enforcement recommendation. The current implementation uses **Anthropic Claude
-   Sonnet 4.6**; the LLM client is provider-agnostic, with Claude Opus 4.7, GPT-5.5, Gemini 3.1
-   Pro, and DeepSeek V4 as drop-in alternatives.
+   advice or an enforcement recommendation. Single-provider by design — **Anthropic Claude
+   Sonnet 4.6** — with the prompt tuned to Claude's output style; a multi-provider abstraction
+   is intentionally out of scope without an accompanying cross-provider evaluation suite.
 
 The analysis runs in two stages: an immediate domain-only assessment as soon as the domain is
 flagged, automatically refined with goods & services data once the website is fetched.
@@ -133,8 +133,9 @@ focused on the detection-plus-structured-analysis pipeline.
 - **UPL / RDG positioning** — the prompt is framed as pre-triage; jurisdiction-specific
   unauthorized-practice-of-law disclaimers would need to be added before any commercial
   deployment, particularly in DE/AT under the RDG.
-- **Cross-provider evaluation** — output quality is currently measured anecdotally. A labeled
-  UDRP-decision fixture set comparing Claude / GPT / Gemini / DeepSeek is on the roadmap.
+- **Evaluation rigor** — output quality is currently measured anecdotally. A labeled
+  UDRP-decision fixture set with regression tests would be the next step before any
+  commercial deployment.
 - **Evidence-grade screenshot capture** — homepage thumbnails come from microlink.io's free
   tier (~50 requests/day, watermarked CDN URLs). For UDRP/WIPO submissions the registrar
   expects timestamped, hash-anchored, full-page captures of every visited path; that requires

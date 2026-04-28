@@ -45,7 +45,7 @@ export function SetupScreen({ initialKey, onStart }: Props) {
             <Logo />
             <div>
               <h1 className="text-xl font-bold tracking-tight">TM Radar</h1>
-              <p className="text-xs text-muted font-mono uppercase tracking-widest">
+              <p className="text-xs text-muted font-mono uppercase tracking-wider">
                 Real-Time Brand Protection
               </p>
             </div>
@@ -61,7 +61,7 @@ export function SetupScreen({ initialKey, onStart }: Props) {
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 placeholder="nike, paypal, spotify..."
-                className="w-full bg-bg border border-border rounded-sm px-4 py-3 font-mono text-base focus:outline-none focus:border-accent transition-colors"
+                className="w-full bg-bg border border-border rounded-sm px-4 py-3 font-mono text-base focus:outline-none focus:border-accent focus-ring transition-colors"
                 autoFocus
               />
               <p className="mt-1.5 text-xs text-muted">
@@ -84,12 +84,12 @@ export function SetupScreen({ initialKey, onStart }: Props) {
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="sk-ant-..."
-                  className="w-full bg-bg border border-border rounded-sm px-4 py-3 pr-20 font-mono text-sm focus:outline-none focus:border-accent transition-colors"
+                  className="w-full bg-bg border border-border rounded-sm px-4 py-3 pr-20 font-mono text-sm focus:outline-none focus:border-accent focus-ring transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowKey((v) => !v)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-text px-2 py-1 font-mono uppercase tracking-wider"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-text px-2 py-1 font-mono uppercase tracking-wider rounded-sm focus-ring"
                 >
                   {showKey ? 'Hide' : 'Show'}
                 </button>
@@ -119,7 +119,7 @@ export function SetupScreen({ initialKey, onStart }: Props) {
                 step={1}
                 value={threshold}
                 onChange={(e) => setThreshold(Number(e.target.value))}
-                className="w-full accent-accent"
+                className="w-full accent-accent rounded-sm focus-ring"
               />
               <div className="flex justify-between text-[10px] text-muted font-mono mt-1">
                 <span>permissive (50)</span>
@@ -133,7 +133,7 @@ export function SetupScreen({ initialKey, onStart }: Props) {
             <button
               type="submit"
               disabled={!canStart}
-              className="w-full bg-accent hover:bg-blue-600 disabled:bg-border disabled:text-muted disabled:cursor-not-allowed text-white font-semibold py-3 rounded-sm transition-colors uppercase tracking-wider text-sm"
+              className="w-full bg-accent hover:bg-blue-600 disabled:bg-border disabled:text-muted disabled:cursor-not-allowed text-white font-semibold py-3 rounded-sm transition-colors uppercase tracking-wider text-sm focus-ring"
             >
               Start Monitoring →
             </button>
@@ -143,7 +143,7 @@ export function SetupScreen({ initialKey, onStart }: Props) {
                 <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-3 bg-surface text-[10px] font-mono uppercase tracking-widest text-muted">
+                <span className="px-3 bg-surface text-[10px] font-mono uppercase tracking-wider text-muted">
                   or
                 </span>
               </div>
@@ -152,7 +152,7 @@ export function SetupScreen({ initialKey, onStart }: Props) {
             <button
               type="button"
               onClick={startDemo}
-              className="w-full border border-border hover:border-accent text-muted hover:text-accent font-mono text-xs uppercase tracking-wider py-3 rounded-sm transition-colors"
+              className="w-full border border-border hover:border-accent text-muted hover:text-accent font-mono text-xs uppercase tracking-wider py-3 rounded-sm transition-colors focus-ring"
             >
               ▶ Try demo (no API key required)
             </button>
@@ -163,25 +163,16 @@ export function SetupScreen({ initialKey, onStart }: Props) {
         </div>
 
         {/* RIGHT — Explainer */}
-        <div className="space-y-5">
-          <Section title="What is trademark squatting?">
-            Bad actors register domains nearly identical to established brands —{' '}
-            <span className="font-mono text-text">nikee.com</span>,{' '}
-            <span className="font-mono text-text">paypaI.com</span> (capital i),{' '}
-            <span className="font-mono text-text">spotify-support.xyz</span> — to phish customers,
-            sell counterfeits, or extort the brand owner. Catching them early is the difference
-            between a takedown and a lawsuit.
-          </Section>
-
-          <Section title="What are Certificate Transparency logs?">
+        <div className="space-y-7 pt-2">
+          <ProseSection title="What are Certificate Transparency logs?">
             Every TLS certificate issued by every CA is published to public, append-only logs.
             <span className="font-mono text-text"> crt.sh</span> indexes them all and exposes a
-            JSON API — we poll it every 30 seconds for new certificates whose hostnames match
+            JSON API. We poll it every 30 seconds for new certificates whose hostnames match
             your brand string.
-          </Section>
+          </ProseSection>
 
           <Section title="How this tool works">
-            <ol className="space-y-2 mt-2">
+            <ol className="space-y-2.5 mt-3">
               <Step n={1} title="Detect">
                 Stream every new certificate; score each domain against your brand using
                 Levenshtein distance, homoglyph normalization, keyword injection, and suspicious-TLD
@@ -198,25 +189,36 @@ export function SetupScreen({ initialKey, onStart }: Props) {
             </ol>
           </Section>
 
-          <div className="bg-surface border border-border rounded-sm p-4 text-xs text-muted leading-relaxed">
-            <span className="text-medium font-semibold">⚠ Legal disclaimer.</span>{' '}
-            This tool identifies <em>potential</em> infringements for investigative purposes only.
-            It does not constitute legal advice. Always consult a qualified trademark attorney
-            before initiating any enforcement action.
-          </div>
+          <p className="text-[11px] text-muted/90 leading-relaxed flex gap-2 pt-1">
+            <span className="text-medium flex-none" aria-hidden>⚠</span>
+            <span>
+              <span className="text-medium font-semibold">Legal disclaimer.</span>{' '}
+              Identifies <em>potential</em> infringements for investigative purposes only;
+              does not constitute legal advice. Consult a qualified trademark attorney before
+              initiating enforcement action.
+            </span>
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function ProseSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-surface border border-border rounded-sm p-5">
-      <h2 className="text-sm font-semibold tracking-wide text-text mb-2 flex items-center gap-2">
-        <span className="w-1 h-4 bg-accent inline-block" />
+    <div>
+      <h2 className="text-[11px] font-mono uppercase tracking-wider text-muted mb-2">
         {title}
       </h2>
+      <div className="text-sm text-muted leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-surface border border-border rounded-sm p-5 shadow-lg">
+      <h2 className="text-sm font-semibold tracking-tight text-text mb-1">{title}</h2>
       <div className="text-sm text-muted leading-relaxed">{children}</div>
     </div>
   );
