@@ -18,13 +18,13 @@ elements for attorney review.
 
 ## What this tool detects: cybersquatting
 
-> **Terminology note.** *Trademark squatting* in strict legal usage refers to the bad-faith
-> registration of a **trademark** by someone other than the legitimate brand owner. What this tool
-> detects is the bad-faith registration of **domain names** that mimic an existing mark — the
-> precise term is **cybersquatting** (per ICANN's UDRP), with typosquatting, homoglyph attacks,
-> combosquatting, and keyword injection as recognized subtypes. The repo title "TM Radar" frames
-> the use case from the brand-protection perspective; the technical detection runs on domain
-> identifiers.
+> **Terminology note.** What this tool detects is the bad-faith registration of **domain names**
+> that mimic an existing mark — the precise term is **cybersquatting** (per ICANN's UDRP), with
+> typosquatting, homoglyph attacks, combosquatting, and keyword injection as recognized subtypes.
+> *Trademark squatting* in strict legal usage refers to the bad-faith registration of a
+> **trademark** itself by someone other than the legitimate brand owner — a related but distinct
+> problem this tool does not address. The repo title "TM Radar" frames the use case from the
+> brand-protection perspective; the technical detection runs on domain identifiers.
 
 Common variants:
 
