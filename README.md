@@ -13,14 +13,16 @@
 TM Radar is a purely client-side React application that polls public Certificate Transparency
 logs for newly issued TLS certificates matching a watched brand, scores each domain against
 cybersquatting heuristics, and — for the truly suspicious ones — fetches the live website and
-produces a structured pre-triage memo mapping the observed signals to UDRP §4 and EUTMR Art. 9
-elements for attorney review.
+produces a structured pre-triage memo mapping the observed signals to UDRP Paragraph 4 and
+EUTMR Art. 9 limbs for attorney review.
 
 ## What this tool detects: cybersquatting
 
 > **Terminology note.** What this tool detects is the bad-faith registration of **domain names**
-> that mimic an existing mark — the precise term is **cybersquatting** (per ICANN's UDRP), with
-> typosquatting, homoglyph attacks, combosquatting, and keyword injection as recognized subtypes.
+> that mimic an existing mark — the precise term is **cybersquatting** (the abusive
+> domain-name registration the UDRP was created to address; cf. **15 U.S.C. § 1125(d) ACPA**),
+> with typosquatting, homoglyph attacks, combosquatting, and keyword injection as recognized
+> subtypes.
 > *Trademark squatting* in strict legal usage refers to the bad-faith registration of a
 > **trademark** itself by someone other than the legitimate brand owner — a related but distinct
 > problem this tool does not address. The repo title "TM Radar" frames the use case from the
@@ -64,10 +66,12 @@ enforcement campaign.
 5. **Analyze** — An LLM produces a structured pre-triage memo covering:
    - **Sign similarity** — squatting technique observed (typo / homoglyph / combo / TLD / keyword / mixed)
    - **Goods & services indicators** — apparent operating market, when the site is reachable
-   - **Likelihood of confusion** — high / medium / low / cannot be assessed
-   - **UDRP §4(a) elements** — explicit mapping to §4(a)(i)–(iii), with §4(b)(i)–(iv) bad-faith
-     circumstances referenced where applicable
-   - **EUTMR Art. 9(2) elements** — explicit mapping to 9(2)(a)–(c)
+   - **Confusion-risk indicator** — high / medium / low / cannot be assessed (a triage proxy;
+     "likelihood of confusion" as a doctrinal conclusion under *Sabel/Canon/Lloyd* is reserved
+     for the UDRP/EUTMR mapping below)
+   - **UDRP Paragraph 4(a) limbs** — explicit mapping to ¶ 4(a)(i)–(iii), with ¶ 4(b)(i)–(iv)
+     bad-faith circumstances referenced where applicable
+   - **EUTMR Art. 9(2) limbs** — explicit mapping to 9(2)(a)–(c)
    - **Indicators for legal review** — investigative steps for the reviewing attorney
      (registrant identity via WHOIS/RDAP, prior use, registrant's portfolio, registrar
      jurisdiction)
@@ -98,10 +102,11 @@ Severity bands: `low` 50–64, `medium` 65–79, `high` 80–91, `critical` 92+.
 
 ## Legal Framework
 
-The prompt anchors the LLM output to concrete provisions — UDRP §4(a)(i)–(iii) elements,
-§4(b)(i)–(iv) bad-faith circumstances, EUTMR Art. 9(2)(a)–(c) infringement limbs, with WIPO as
-the principal UDRP forum — rather than free-associating around "bad faith". See "Deliberate
-Simplifications" for what is *not* modeled.
+The prompt anchors the LLM output to concrete provisions — UDRP Paragraph 4(a)(i)–(iii) limbs,
+¶ 4(b)(i)–(iv) bad-faith circumstances, EUTMR Art. 9(2)(a)–(c) infringement limbs, with WIPO as
+the most-used ICANN-approved UDRP provider — rather than free-associating around "bad faith".
+Note that Art. 9(2) applies to **registered EU trade marks**; unregistered signs fall under
+national law or Art. 8(4) EUTMR. See "Deliberate Simplifications" for what is *not* modeled.
 
 > ⚠ This tool identifies *potential* indicators of cybersquatting for investigative purposes
 > only. It does not constitute legal advice. Always consult a qualified trademark attorney
@@ -113,11 +118,14 @@ The following are intentionally **out of scope**. A production brand-protection 
 need to address each of them; this tool deliberately stops short to keep the demonstration
 focused on the detection-plus-structured-analysis pipeline.
 
-- **Nice classification** — class similarity (Art. 9(2)(b) EUTMR) is not assessed. The tool
-  cannot tell whether the registrant operates in goods/services classes that conflict with the
+- **Goods/services similarity** — Art. 9(2)(b) EUTMR is not assessed. Nice class headings are
+  not the legal test (cf. CJEU *Canon* C-39/97; *IP Translator* C-307/10); the tool cannot
+  evaluate whether the registrant's actual goods or services overlap with those of the
   protected mark.
-- **Reputation protection** — Art. 9(2)(c) EUTMR (well-known marks) is not modeled. The
-  reputation status of the input mark is assumed unknown.
+- **Reputation protection** — Art. 9(2)(c) EUTMR (marks with a reputation; cf. *General Motors*
+  C-375/97) is not modeled. The reputation status of the input mark is assumed unknown. Note
+  this is distinct from "well-known marks" under Paris Convention Art. 6bis / TRIPS Art. 16,
+  which is also out of scope.
 - **Priority and geographic scope** — first-to-file dates, EU vs. national vs. Madrid scopes,
   and prior-use defenses are all ignored.
 - **Multi-brand portfolios** — single-brand monitoring only. A real IP department typically
@@ -130,22 +138,25 @@ focused on the detection-plus-structured-analysis pipeline.
   faith would all require integration with WHOIS APIs (most paid or rate-limited).
 - **Persistent case management** — alerts vanish on page refresh. A production product needs a
   database, audit trail, and evidence packaging for legal proceedings.
-- **UPL / RDG positioning** — the prompt is framed as pre-triage; jurisdiction-specific
+- **UPL positioning** — the prompt is framed as pre-triage; jurisdiction-specific
   unauthorized-practice-of-law disclaimers would need to be added before any commercial
-  deployment, particularly in DE/AT under the RDG.
+  deployment, particularly in Germany under the **RDG (Rechtsdienstleistungsgesetz)** and in
+  Austria under the **RAO (Rechtsanwaltsordnung)**.
 - **Evaluation rigor** — output quality is currently measured anecdotally. A labeled
   UDRP-decision fixture set with regression tests would be the next step before any
   commercial deployment.
 - **Evidence-grade screenshot capture** — homepage thumbnails come from microlink.io's free
-  tier (~50 requests/day, watermarked CDN URLs). For UDRP/WIPO submissions the registrar
+  tier (~50 requests/day, watermarked CDN URLs). For UDRP/WIPO submissions the panel/provider
   expects timestamped, hash-anchored, full-page captures of every visited path; that requires
   a self-hosted Puppeteer cluster (Cloudflare Workers Browser Rendering or similar) plus a
   crawl strategy and is explicitly out of scope here.
 - **EU GDPR — Google Fonts in-line loading** — *Inter* and *JetBrains Mono* are loaded
   directly from Google's CDN, which transmits visitor IPs to Google. The Landgericht München I
-  ruled in *3 O 17493/20* (20 January 2022) that this constitutes an unlawful transfer of
-  personal data without consent. For EU/EEA deployment, fonts should be self-hosted or loaded
-  behind a consent gate. Documented in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md#web-fonts).
+  ruled in *3 O 17493/20* (20 January 2022) that processing visitor IPs this way without
+  consent lacks a legal basis under **Art. 6(1) GDPR** (€100 damages awarded under
+  § 823(1) BGB). The court did not reach the Chapter V transfer question. For EU/EEA
+  deployment, fonts should be self-hosted or loaded behind a consent gate. Documented in
+  [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md#web-fonts).
 
 ## Roadmap
 
