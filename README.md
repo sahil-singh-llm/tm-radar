@@ -14,7 +14,7 @@ TM Radar is a purely client-side React application that polls public Certificate
 logs for newly issued TLS certificates matching a watched brand, scores each domain against
 cybersquatting heuristics, and — for the truly suspicious ones — fetches the live website and
 produces a structured pre-triage memo mapping the observed signals to UDRP Paragraph 4 and
-EUTMR Art. 9 limbs for attorney review.
+EUTMR Art. 9(2) limbs for attorney review.
 
 ## What this tool detects: cybersquatting
 

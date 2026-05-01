@@ -68,23 +68,23 @@ Produce a structured triage memo:
 
 2. GOODS & SERVICES INDICATORS: ${
     websiteContent
-      ? 'Characterize the apparent goods/services from the fetched site. Note: Nice classes, priority dates, and the geographic scope of the registered mark are not assessed by this tool.'
+      ? 'Characterize the apparent goods/services from the fetched site. Note: goods/services overlap, priority dates, and the geographic scope of any registered right are not assessed by this tool (Nice classification is administrative, not the legal test under Art. 9(2)(b) EUTMR; cf. CJEU Canon C-39/97).'
       : 'Cannot be assessed — website unreachable. Flag for re-check once site is live.'
   }
 
-3. LIKELIHOOD OF CONFUSION: indicators (high / medium / low / cannot be assessed).
+3. CONFUSION-RISK INDICATOR (triage proxy, not the doctrinal Sabel/Canon/Lloyd test): high / medium / low / cannot be assessed.
 
-4. UDRP §4(a) ELEMENTS — map the observed signals to each element:
+4. UDRP Paragraph 4(a) LIMBS — map the observed signals to each limb:
    (i) identical or confusingly similar to a mark in which the complainant has rights
    (ii) registrant has no rights or legitimate interests in the domain
    (iii) domain registered and used in bad faith
-   Where applicable, reference §4(b)(i)–(iv) bad-faith circumstances (offer for sale to mark holder, blocking pattern, competitor disruption, commercial gain via confusion).
+   Where applicable, reference ¶ 4(b)(i)–(iv) bad-faith circumstances (offer for sale to mark holder, blocking pattern, competitor disruption, commercial gain via confusion).
    If brand context is provided above, use it to characterize the protected mark concretely; do not treat it as a register-verified right.
 
-5. EUTMR Art. 9(2) ELEMENTS — map signals to:
-   (a) identical sign for identical goods/services
-   (b) similar sign with likelihood of confusion
-   (c) sign taking unfair advantage of a mark with reputation (reputation status not verified by this tool).
+5. EUTMR Art. 9(2) LIMBS — map signals to:
+   (a) identical sign for identical goods/services (double-identity; requires both, do not invoke without a goods/services-identity finding)
+   (b) identical or similar sign for similar goods/services, or similar sign for identical goods/services, where there exists a likelihood of confusion (including a likelihood of association)
+   (c) use that takes unfair advantage of, or is detrimental to, the distinctive character or the repute of a mark with a reputation (reputation status not verified by this tool; distinct from "well-known marks" under Paris Convention Art. 6bis / TRIPS Art. 16).
 
 6. INDICATORS FOR LEGAL REVIEW: Investigative steps and evidence the reviewing attorney should verify before any enforcement decision (e.g. registrant identity via WHOIS/RDAP, prior use evidence, pattern of similar registrations, registrar/hosting jurisdiction).
 

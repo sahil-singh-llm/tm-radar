@@ -183,8 +183,9 @@ export function SetupScreen({ initialKey, onStart }: Props) {
                 the analysis with goods & services data.
               </Step>
               <Step n={3} title="Analyze">
-                Claude assesses sign similarity, goods similarity, likelihood of confusion, and
-                recommends an action under UDRP / EUTMR Art. 9.
+                Claude assesses sign similarity, goods/services indicators, and confusion-risk;
+                maps signals to UDRP Paragraph 4(a) and EUTMR Art. 9(2) limbs for attorney
+                review.
               </Step>
             </ol>
           </Section>

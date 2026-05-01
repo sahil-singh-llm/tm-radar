@@ -162,8 +162,9 @@ Use is governed by [Google Fonts terms](https://developers.google.com/fonts/faq)
 > **GDPR notice for EU/EEA visitors.** Loading webfonts from Google's CDN transmits the
 > visitor's IP address to Google. The Landgericht München I (Regional Court Munich I) ruled in
 > *3 O 17493/20* (judgment of 20 January 2022) that dynamic Google Fonts embedding without
-> consent constitutes an unlawful transfer of personal data under the GDPR and awarded EUR 100
-> in damages
+> consent constitutes processing of personal data without a legal basis under
+> **Art. 6(1) GDPR**, awarding EUR 100 in damages under § 823(1) BGB; the court did not reach
+> the Chapter V cross-border-transfer question
 > ([rewis.io/lhm-20-01-2022-3-o-1749320](https://rewis.io/urteile/urteil/lhm-20-01-2022-3-o-1749320/)).
 > For production deployment in EU contexts, fonts should be self-hosted (downloaded and served
 > from the same origin) or loaded behind a consent gate. This project links Google Fonts
