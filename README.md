@@ -1,6 +1,6 @@
 # TM Radar
 
-**Real-time trademark squatting detection through Certificate Transparency logs + AI-powered legal analysis.**
+**Real-time cybersquatting detection (typosquats, homoglyphs, combos) via Certificate Transparency + AI-powered UDRP/EUTMR pre-triage.**
 
 [![Live Demo](https://img.shields.io/badge/▶-Live_Demo-2563EB)](https://sahil-singh-llm.github.io/tm-radar/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
