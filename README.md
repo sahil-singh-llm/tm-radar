@@ -8,6 +8,10 @@
 [![100% Client-Side](https://img.shields.io/badge/100%25-Client--Side-22C55E)](#)
 [![Deployed on GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-181717?logo=github&logoColor=white)](https://sahil-singh-llm.github.io/tm-radar/)
 
+<p align="center">
+  <img src="docs/preview.gif" alt="TM Radar live monitoring — Certificate-Transparency stream feeds domains into the radar, suspicious ones expand into a structured UDRP/EUTMR triage memo." width="900">
+</p>
+
 ---
 
 TM Radar is a purely client-side React application that polls public Certificate Transparency
@@ -168,43 +172,99 @@ focused on the detection-plus-structured-analysis pipeline.
 
 ## Setup
 
+### Local development
+
 ```bash
 npm install
-npm run dev
+npm run dev          # vite dev server on :5173
+npm run test         # vitest (detection heuristics — 25 cases)
+npm run typecheck    # tsc -b
+npm run build        # production bundle into dist/
+npm run deploy       # publishes dist/ to gh-pages
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Two ways to use it:
+Open [http://localhost:5173](http://localhost:5173). With no Cloudflare worker configured the
+client falls back to BYOK-only mode — paste your own
+[Anthropic API key](https://console.anthropic.com) (stored only in `sessionStorage`, sent
+directly to Anthropic, never via any server).
 
-- **Live mode** — enter a brand name plus an [Anthropic API key](https://console.anthropic.com)
-  (key is stored only in `sessionStorage`, never transmitted anywhere except to Anthropic). Pick a
-  similarity threshold (default 80). Real CT-log stream, real LLM analysis.
-- **Demo mode** — click "Try demo (no API key required)" on the setup screen. Simulated
-  certificate stream + canned legal analyses for each detection technique. Full UX walkthrough
-  without an account anywhere.
+### Cloudflare Worker (production proxy)
 
-If crt.sh is unreachable in live mode (corporate firewall, CORS-proxy outage, etc.), the app
-automatically falls back to the simulated demo feed after three consecutive failed polls.
+For the worker-mode default — visitors don't need their own Anthropic key — deploy the proxy:
+
+```bash
+cd worker
+npm install
+wrangler login
+wrangler kv namespace create TM_RADAR_KV    # paste returned id into wrangler.toml
+wrangler secret put ANTHROPIC_API_KEY        # your operator key
+wrangler deploy
+```
+
+Then point the client at the deployed worker:
+
+```bash
+echo "VITE_WORKER_URL=https://tm-radar-worker.<your-subdomain>.workers.dev" > .env.production
+npm run deploy
+```
+
+The worker enforces an `Origin` allowlist (set via `ALLOWED_ORIGINS` in `wrangler.toml`),
+per-IP daily rate limits, a hard daily $-budget cap, a 24-hour per-domain response cache, and
+routes Stage-1 (domain-only) requests to Haiku 4.5 and Stage-2 (enriched with website content)
+to Sonnet 4.6. When the budget is exhausted or the worker is unreachable, the client silently
+falls back to canned per-technique analyses for that alert so the demo never breaks.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    Browser["Visitor browser<br/>(GitHub Pages)"]
+    Worker["Cloudflare Worker<br/>tm-radar-worker"]
+    KV[("Cloudflare KV<br/>budget · rate-limit · cache")]
+    Anthropic["Anthropic API<br/>Haiku 4.5 · Sonnet 4.6"]
+    Crtsh["crt.sh<br/>Certificate Transparency"]
+
+    Browser -->|"GET /crtsh?q=brand"| Worker
+    Browser -->|"POST /analyze"| Worker
+    Worker --> KV
+    Worker -->|"forward CT query"| Crtsh
+    Worker -->|"messages.create"| Anthropic
+    Browser -. "BYOK fallback path" .-> Anthropic
+```
+
+The worker is the single point of egress for the paid (Anthropic) and rate-limited (crt.sh)
+APIs; the browser only talks to the worker. The dashed BYOK path opens when a visitor supplies
+their own Anthropic key — calls then go directly browser → Anthropic, never touching the
+worker.
+
+### Repo layout
+
 ```
 src/
-├── App.tsx              — top-level state machine: setup ↔ monitor
+├── App.tsx                — top-level state machine: setup ↔ monitor
 ├── components/
-│   ├── SetupScreen.tsx  — onboarding form + explainer
-│   ├── Monitor.tsx      — orchestrates stream → detection → analysis
-│   ├── DomainAlert.tsx  — single flagged domain card
-│   ├── Radar.tsx        — animated radar visualization of observed + flagged domains
-│   └── StatsBar.tsx     — counters + connection status
+│   ├── SetupScreen.tsx    — onboarding form, threshold-info modal, BYOK toggle
+│   ├── Monitor.tsx        — orchestrates stream → detection → worker/BYOK analysis
+│   ├── DomainAlert.tsx    — compact alert card with expand-for-details
+│   ├── Radar.tsx          — animated radar visualization of observed + flagged domains
+│   └── StatsBar.tsx       — counters + connection status
 └── lib/
-    ├── crtsh.ts         — crt.sh polling client w/ id-cursor + demo fallback
-    ├── screenshot.ts    — microlink.io homepage capture for evidence preview
-    ├── detection.ts     — Levenshtein, combosquatting, keyword, TLD scoring
-    ├── homoglyphs.ts    — character substitution map + normalization
-    ├── fetcher.ts       — multi-proxy CORS website fetch
-    ├── claude.ts        — two-stage rate-limited Anthropic API client
-    ├── brandProfile.ts  — Wikidata SPARQL brand-context lookup
-    └── demoAnalysis.ts  — canned legal analyses for the no-API-key demo flow
+    ├── crtsh.ts           — crt.sh polling: worker proxy first, public proxies as fallback
+    ├── screenshot.ts      — microlink.io homepage capture for evidence preview
+    ├── detection.ts       — Levenshtein, combosquatting, keyword, TLD, homoglyph scoring
+    ├── detection.test.ts  — vitest fixtures for detection heuristics
+    ├── homoglyphs.ts      — character substitution map + normalization
+    ├── fetcher.ts         — multi-proxy CORS website fetch
+    ├── claude.ts          — Anthropic client (BYOK) + worker-proxy client + rate limiter
+    ├── brandProfile.ts    — Wikidata SPARQL brand-context lookup
+    └── demoAnalysis.ts    — canned per-technique analyses (worker-failure failover)
+
+worker/                    — Cloudflare Worker (TypeScript on Workers Runtime)
+├── src/
+│   ├── index.ts           — request routing, validation, KV ops, CORS
+│   ├── anthropic.ts       — Claude call with system-prompt cache_control breakpoint
+│   └── types.ts           — shared request/response/env types
+└── wrangler.toml          — KV binding, allowed origins, budget + rate limits, model IDs
 ```
 
 ## Scope and Audience
@@ -217,7 +277,7 @@ multi-vector detection heuristics, structured legal prompting against concrete U
 provisions, attorney-facing output framing, and explicit limit awareness.
 
 Intended audience: IP and brand-protection teams evaluating where AI fits into early-stage
-cybersquatting triage, and Legal Engineering hiring panels.
+cybersquatting triage.
 
 ## License & Attribution
 
