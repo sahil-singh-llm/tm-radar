@@ -5,7 +5,7 @@
 [![Live Demo](https://img.shields.io/badge/▶-Live_Demo-2563EB)](https://sahil-singh-llm.github.io/tm-radar/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Legal Tech](https://img.shields.io/badge/Legal_Tech-UDRP_%2B_EUTMR-7C3AED)](#what-this-tool-detects-cybersquatting)
-[![100% Client-Side](https://img.shields.io/badge/100%25-Client--Side-22C55E)](#)
+[![Single-Page React](https://img.shields.io/badge/SPA-React_+_Vite-22C55E)](#)
 [![Deployed on GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-181717?logo=github&logoColor=white)](https://sahil-singh-llm.github.io/tm-radar/)
 
 <p align="center">
@@ -16,11 +16,13 @@
 
 ---
 
-TM Radar is a purely client-side React application that polls public Certificate Transparency
-logs for newly issued TLS certificates matching a watched brand, scores each domain against
+TM Radar is a single-page React application that polls public Certificate Transparency logs
+for newly issued TLS certificates matching a watched brand, scores each domain against
 cybersquatting heuristics, and — for the truly suspicious ones — fetches the live website and
 produces a structured pre-triage memo mapping the observed signals to UDRP Paragraph 4 and
-EUTMR Art. 9(2) limbs for attorney review.
+EUTMR Art. 9(2) limbs for attorney review. The live demo routes the LLM call through a thin
+Cloudflare Worker proxy so visitors don't need their own Anthropic key; a BYOK fallback
+preserves the original direct-from-browser path.
 
 ## What this tool detects: cybersquatting
 
@@ -192,7 +194,25 @@ directly to Anthropic, never via any server).
 
 ### Cloudflare Worker (production proxy)
 
-For the worker-mode default — visitors don't need their own Anthropic key — deploy the proxy:
+For the worker-mode default — visitors don't need their own Anthropic key — deploy the proxy. The browser then only talks to the worker, which is the single point of egress for the paid (Anthropic) and rate-limited (crt.sh) APIs:
+
+```mermaid
+flowchart LR
+    Browser["Visitor browser<br/>(GitHub Pages)"]
+    Worker["Cloudflare Worker<br/>tm-radar-worker"]
+    KV[("Cloudflare KV<br/>budget · rate-limit · cache")]
+    Anthropic["Anthropic API<br/>Haiku 4.5 / Sonnet 4.6"]
+    Crtsh["crt.sh<br/>Certificate Transparency"]
+
+    Browser -->|GET /crtsh?q=brand| Worker
+    Browser -->|POST /analyze| Worker
+    Worker --> KV
+    Worker -->|forward CT query| Crtsh
+    Worker -->|messages.create| Anthropic
+    Browser -.->|BYOK fallback path| Anthropic
+```
+
+The dashed BYOK path opens when a visitor supplies their own Anthropic key — calls then go directly browser → Anthropic, never touching the worker. To deploy:
 
 ```bash
 cd worker
@@ -218,28 +238,12 @@ falls back to canned per-technique analyses for that alert so the demo never bre
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Browser["Visitor browser<br/>(GitHub Pages)"]
-    Worker["Cloudflare Worker<br/>tm-radar-worker"]
-    KV[("Cloudflare KV<br/>budget · rate-limit · cache")]
-    Anthropic["Anthropic API<br/>Haiku 4.5 / Sonnet 4.6"]
-    Crtsh["crt.sh<br/>Certificate Transparency"]
-
-    Browser -->|GET /crtsh?q=brand| Worker
-    Browser -->|POST /analyze| Worker
-    Worker --> KV
-    Worker -->|forward CT query| Crtsh
-    Worker -->|messages.create| Anthropic
-    Browser -.->|BYOK fallback path| Anthropic
-```
-
-The worker is the single point of egress for the paid (Anthropic) and rate-limited (crt.sh)
-APIs; the browser only talks to the worker. The dashed BYOK path opens when a visitor supplies
-their own Anthropic key — calls then go directly browser → Anthropic, never touching the
-worker.
-
-### Repo layout
+A single-page React app: the browser polls Certificate Transparency logs, scores each new
+domain through a multi-signal detection pipeline, and — for matches above the threshold — runs
+a two-stage LLM analysis (Stage 1 domain-only, Stage 2 enriched with the fetched website).
+Analysis routes through the Cloudflare Worker proxy by default; with a user-supplied Anthropic
+key it falls back to a direct browser → Anthropic call (see [Setup → Cloudflare Worker](#cloudflare-worker-production-proxy)
+for the deployment topology of the proxy path).
 
 ```
 src/
