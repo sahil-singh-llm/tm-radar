@@ -236,14 +236,15 @@ routes Stage-1 (domain-only) requests to Haiku 4.5 and Stage-2 (enriched with we
 to Sonnet 4.6. When the budget is exhausted or the worker is unreachable, the client silently
 falls back to canned per-technique analyses for that alert so the demo never breaks.
 
-## Architecture
+## Project Architecture
 
 A single-page React app: the browser polls Certificate Transparency logs, scores each new
 domain through a multi-signal detection pipeline, and — for matches above the threshold — runs
-a two-stage LLM analysis (Stage 1 domain-only, Stage 2 enriched with the fetched website).
-Analysis routes through the Cloudflare Worker proxy by default; with a user-supplied Anthropic
-key it falls back to a direct browser → Anthropic call (see [Setup → Cloudflare Worker](#cloudflare-worker-production-proxy)
-for the deployment topology of the proxy path).
+a two-stage LLM analysis (Stage 1 domain-only, Stage 2 enriched with the fetched website). The
+analysis call has two interchangeable paths, both supported out of the box: a direct
+browser → Anthropic call with a user-supplied key (BYOK), or an optional Cloudflare Worker
+proxy that the operator funds so visitors don't need a key (see [Setup → Cloudflare Worker](#cloudflare-worker-production-proxy)
+for the proxy deploy walkthrough). Forks running locally without a worker simply use BYOK.
 
 ```
 src/
