@@ -194,25 +194,7 @@ directly to Anthropic, never via any server).
 
 ### Cloudflare Worker (production proxy)
 
-For the worker-mode default — visitors don't need their own Anthropic key — deploy the proxy. The browser then only talks to the worker, which is the single point of egress for the paid (Anthropic) and rate-limited (crt.sh) APIs:
-
-```mermaid
-flowchart LR
-    Browser["Visitor browser<br/>(GitHub Pages)"]
-    Worker["Cloudflare Worker<br/>tm-radar-worker"]
-    KV[("Cloudflare KV<br/>budget · rate-limit · cache")]
-    Anthropic["Anthropic API<br/>Haiku 4.5 / Sonnet 4.6"]
-    Crtsh["crt.sh<br/>Certificate Transparency"]
-
-    Browser -->|GET /crtsh?q=brand| Worker
-    Browser -->|POST /analyze| Worker
-    Worker --> KV
-    Worker -->|forward CT query| Crtsh
-    Worker -->|messages.create| Anthropic
-    Browser -.->|BYOK fallback path| Anthropic
-```
-
-The dashed BYOK path opens when a visitor supplies their own Anthropic key — calls then go directly browser → Anthropic, never touching the worker. To deploy:
+The reference proxy implementation is a small Cloudflare Worker that holds the Anthropic key as a secret, validates incoming requests, enforces an `Origin` allowlist + per-IP rate limit + a hard daily $-budget cap, caches per-domain responses for 24 h, and routes Stage-1 (domain-only) calls to Haiku and Stage-2 (enriched) calls to Sonnet. Any HTTP backend that accepts the same JSON contract for `/analyze` and `/crtsh` works just as well — Workers are just convenient (free tier, KV included, single-command deploy). To deploy this one:
 
 ```bash
 cd worker
@@ -242,9 +224,11 @@ A single-page React app: the browser polls Certificate Transparency logs, scores
 domain through a multi-signal detection pipeline, and — for matches above the threshold — runs
 a two-stage LLM analysis (Stage 1 domain-only, Stage 2 enriched with the fetched website). The
 analysis call has two interchangeable paths, both supported out of the box: a direct
-browser → Anthropic call with a user-supplied key (BYOK), or an optional Cloudflare Worker
-proxy that the operator funds so visitors don't need a key (see [Setup → Cloudflare Worker](#cloudflare-worker-production-proxy)
-for the proxy deploy walkthrough). Forks running locally without a worker simply use BYOK.
+browser → Anthropic call with a user-supplied key (BYOK), or via an optional thin backend
+proxy that holds the operator's key so visitors don't need their own. The reference proxy is
+a Cloudflare Worker (see [Setup](#cloudflare-worker-production-proxy)), but any small server
+implementing the same JSON contract — your own Node service, a Lambda, fly.io machine, etc. —
+slots in identically. Forks running locally without a proxy simply use BYOK.
 
 ```
 src/
