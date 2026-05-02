@@ -9,9 +9,9 @@
 [![Deployed on GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-181717?logo=github&logoColor=white)](https://sahil-singh-llm.github.io/tm-radar/)
 
 <p align="center">
-  <video src="docs/preview.mp4" autoplay loop muted playsinline controls width="900" aria-label="TM Radar live demo: certificate-transparency stream feeds domains into the radar, suspicious ones expand into a structured UDRP/EUTMR triage memo">
-    <a href="docs/preview.mp4">Watch the live demo (MP4, 1 MB)</a>
-  </video>
+  <img src="docs/preview.gif" alt="TM Radar live demo: certificate-transparency stream feeds domains into the radar, suspicious ones expand into a structured UDRP/EUTMR triage memo." width="900">
+  <br>
+  <sub><a href="docs/preview.mp4">Sharper MP4 version (1.1 MB)</a></sub>
 </p>
 
 ---
