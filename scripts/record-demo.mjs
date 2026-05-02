@@ -48,11 +48,12 @@ await page.waitForTimeout(600);
 console.log('▶ click Start Analysis');
 await page.click('button[type="submit"]');
 
-// Demo-mode emits 3 random benign domains every 220ms (radar fills fast)
-// + a brand-suspicious variant every 9–12s. We need at least one suspicious
-// to expand into a memo. Wait long enough.
-console.log('▶ wait for radar fill + first suspicious alert');
-await page.waitForTimeout(11000);
+// Demo mode emits ~3 benign domains every 220ms (radar fills) + the first
+// brand-suspicious variant at ~2.5s, then every 9-12s. Worker Stage-1
+// (Haiku) call takes ~2-3s, so the first memo lands around t≈7s after
+// click. Wait 13s to give the analysis space to render before we expand.
+console.log('▶ wait for radar fill + first suspicious alert + AI memo');
+await page.waitForTimeout(13000);
 
 // Expand the first available alert's Details panel
 try {

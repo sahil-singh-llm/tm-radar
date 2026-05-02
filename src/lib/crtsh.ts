@@ -203,6 +203,10 @@ export class CrtshClient {
     let counter = 0;
 
     const emit = (d: string) => this.handlers.onDomain(d, fakeCertMeta());
+    const emitSuspicious = () => {
+      const variants = suspiciousVariants(brand);
+      emit(variants[Math.floor(Math.random() * variants.length)]);
+    };
 
     this.demoTimer = window.setInterval(() => {
       const batch = 1 + Math.floor(Math.random() * 3);
@@ -211,10 +215,15 @@ export class CrtshClient {
       }
     }, 220);
 
-    this.suspiciousTimer = window.setInterval(() => {
-      const variants = suspiciousVariants(brand);
-      emit(variants[Math.floor(Math.random() * variants.length)]);
-    }, 9000 + Math.random() * 3000);
+    // Fire the first brand-suspicious variant ~2.5s after demo starts so the
+    // radar has time to fill with benign traffic first, but the user sees an
+    // actual flagged alert without waiting the full 9–12s tick window.
+    window.setTimeout(emitSuspicious, 2500);
+
+    this.suspiciousTimer = window.setInterval(
+      emitSuspicious,
+      9000 + Math.random() * 3000,
+    );
   }
 }
 
