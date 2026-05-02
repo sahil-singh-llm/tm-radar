@@ -85,7 +85,7 @@ export function SetupScreen({ initialKey, workerEnabled, onStart }: Props) {
 
   return (
     <div className="min-h-screen bg-bg text-text flex items-center justify-center p-6">
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* LEFT — Form */}
         <div className="bg-surface border border-border rounded-sm p-8 shadow-2xl">
           <div className="flex items-center gap-3 mb-8">
@@ -116,7 +116,7 @@ export function SetupScreen({ initialKey, workerEnabled, onStart }: Props) {
               </p>
               {touched && !brandValid && (
                 <p className="mt-1.5 text-xs text-critical">
-                  Enter a brand name (≥2 characters, alphanumeric).
+                  Enter a brand name (≥2 characters; letters, digits, or hyphens — no dots, spaces, or special characters).
                 </p>
               )}
             </div>
@@ -181,7 +181,7 @@ export function SetupScreen({ initialKey, workerEnabled, onStart }: Props) {
                   Start Analysis
                 </button>
 
-                <details className="group border-t border-border pt-4" open={!!initialKey}>
+                <details className="group border-t border-border pt-4">
                   <summary className="list-none cursor-pointer text-xs text-muted hover:text-text transition-colors select-none">
                     <span className="inline-block transition-transform group-open:rotate-90 mr-2">
                       ▸

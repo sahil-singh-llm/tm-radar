@@ -10,8 +10,6 @@ export type BrandProfile = {
 
 const cache = new Map<string, BrandProfile | null>();
 
-const UA = 'TMRadar/1.0 (https://github.com/sahil-singh-llm/tm-radar)';
-
 // Wikidata classes used to gate "actually a real business entity":
 // Q4830453 business · Q167270 brand · Q43229 organization · Q891723 public company
 // Q6881511 enterprise · Q786820 commercial enterprise
@@ -57,7 +55,7 @@ export async function lookupBrandProfile(brand: string): Promise<BrandProfile | 
       `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(brand)}&language=en&format=json&type=item&limit=5&origin=*`;
     const searchRes = await fetch(searchUrl, {
       signal,
-      headers: { 'User-Agent': UA, Accept: 'application/json' },
+      headers: { Accept: 'application/json' },
     });
     if (!searchRes.ok) {
       cache.set(key, null);
@@ -73,10 +71,7 @@ export async function lookupBrandProfile(brand: string): Promise<BrandProfile | 
     const sparqlUrl = `https://query.wikidata.org/sparql?query=${encodeURIComponent(SPARQL(ids))}`;
     const sparqlRes = await fetch(sparqlUrl, {
       signal,
-      headers: {
-        Accept: 'application/sparql-results+json',
-        'User-Agent': UA,
-      },
+      headers: { Accept: 'application/sparql-results+json' },
     });
     if (!sparqlRes.ok) {
       cache.set(key, null);

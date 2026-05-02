@@ -192,12 +192,17 @@ function AnalysisSection({
       </div>
 
       {stage === 'idle' && (
-        <button
-          onClick={() => onRequestAnalysis(domain)}
-          className="px-3 py-1.5 border border-accent/50 text-accent hover:bg-accent/10 text-xs font-mono uppercase tracking-wider transition-colors rounded-sm focus-ring"
-        >
-          Request Analysis
-        </button>
+        <div className="space-y-2">
+          <p className="text-[11px] text-muted">
+            Below the similarity threshold — auto-analysis was skipped. Click below to analyze on demand.
+          </p>
+          <button
+            onClick={() => onRequestAnalysis(domain)}
+            className="px-3 py-1.5 border border-accent/50 text-accent hover:bg-accent/10 text-xs font-mono uppercase tracking-wider transition-colors rounded-sm focus-ring"
+          >
+            Request Analysis
+          </button>
+        </div>
       )}
       {stage === 'pending' && !analysis && (
         <div className="flex items-center gap-2 text-muted text-xs italic">

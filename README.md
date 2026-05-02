@@ -221,15 +221,15 @@ flowchart LR
     Browser["Visitor browser<br/>(GitHub Pages)"]
     Worker["Cloudflare Worker<br/>tm-radar-worker"]
     KV[("Cloudflare KV<br/>budget · rate-limit · cache")]
-    Anthropic["Anthropic API<br/>Haiku 4.5 · Sonnet 4.6"]
+    Anthropic["Anthropic API<br/>Haiku 4.5 / Sonnet 4.6"]
     Crtsh["crt.sh<br/>Certificate Transparency"]
 
-    Browser -->|"GET /crtsh?q=brand"| Worker
-    Browser -->|"POST /analyze"| Worker
+    Browser -->|GET /crtsh?q=brand| Worker
+    Browser -->|POST /analyze| Worker
     Worker --> KV
-    Worker -->|"forward CT query"| Crtsh
-    Worker -->|"messages.create"| Anthropic
-    Browser -. "BYOK fallback path" .-> Anthropic
+    Worker -->|forward CT query| Crtsh
+    Worker -->|messages.create| Anthropic
+    Browser -.->|BYOK fallback path| Anthropic
 ```
 
 The worker is the single point of egress for the paid (Anthropic) and rate-limited (crt.sh)
