@@ -376,7 +376,7 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
       <div ref={containerRef} className="relative w-full aspect-square select-none">
         <canvas ref={canvasRef} className="block w-full h-full" />
         <span
-          className={`pointer-events-none absolute bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-widest text-sky-300/85 transition-opacity duration-300 ${
+          className={`pointer-events-none absolute bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-wider text-sky-300/85 transition-opacity duration-300 ${
             bootLabel ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -398,7 +398,7 @@ export const Radar = memo(function Radar({ entries, alerts, brand }: Props) {
 
       <div className="border-t border-border px-4 py-3 flex-1 min-h-0 flex flex-col">
         <div className="flex items-baseline justify-between mb-1.5">
-          <span className="text-[10px] font-mono text-muted uppercase tracking-widest">
+          <span className="text-[10px] font-mono text-muted uppercase tracking-wider">
             Recent traffic
           </span>
           <span className="text-[10px] font-mono text-muted/60">last {ticker.length}</span>

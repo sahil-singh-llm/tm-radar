@@ -4,17 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#090e1a',
-        surface: '#0f1729',
-        'surface-2': '#152038',
-        border: '#1e2d4a',
-        accent: '#2563eb',
-        critical: '#ef4444',
-        high: '#f97316',
-        medium: '#eab308',
-        low: '#22c55e',
-        text: '#e2e8f0',
-        muted: '#64748b',
+        bg: 'oklch(0.1654 0.0267 266.20 / <alpha-value>)',
+        surface: 'oklch(0.2070 0.0380 265.07 / <alpha-value>)',
+        'surface-2': 'oklch(0.2466 0.0486 264.47 / <alpha-value>)',
+        border: 'oklch(0.2992 0.0567 262.66 / <alpha-value>)',
+        accent: 'oklch(0.5461 0.2152 262.88 / <alpha-value>)',
+        critical: 'oklch(0.6368 0.2078 25.33 / <alpha-value>)',
+        high: 'oklch(0.7049 0.1867 47.60 / <alpha-value>)',
+        medium: 'oklch(0.7952 0.1617 86.05 / <alpha-value>)',
+        low: 'oklch(0.7227 0.1920 149.58 / <alpha-value>)',
+        text: 'oklch(0.9288 0.0126 255.51 / <alpha-value>)',
+        muted: 'oklch(0.5544 0.0407 257.42 / <alpha-value>)',
       },
       fontFamily: {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],

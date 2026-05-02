@@ -47,7 +47,7 @@ export function StatsBar({
             <div className="text-base font-serif italic font-semibold tracking-tight leading-none">
               TM Radar
             </div>
-            <div className="mt-1 text-[10px] text-muted font-mono uppercase tracking-widest">
+            <div className="mt-1 text-[10px] text-muted font-mono uppercase tracking-wider">
               uptime {uptime}
             </div>
           </div>
@@ -62,8 +62,8 @@ export function StatsBar({
 
         {brandProfile && (
           <span
-            className="text-[10px] text-muted font-mono uppercase tracking-widest hidden md:inline"
-            title="Brand context from Wikidata — community-curated, not a register source"
+            className="text-[10px] text-muted font-mono uppercase tracking-wider hidden md:inline"
+            title="Brand context from Wikidata: community-curated, not a register source"
           >
             {brandProfile.label} · {brandProfile.industry ?? '—'} · {brandProfile.inception ?? '—'} · Wikidata
           </span>
@@ -85,7 +85,7 @@ export function StatsBar({
 
         <button
           onClick={onStop}
-          className="text-xs font-mono uppercase tracking-wider px-3 py-1.5 border border-border hover:border-critical hover:text-critical text-muted rounded-sm transition-colors"
+          className="text-xs font-mono uppercase tracking-wider px-3 py-1.5 border border-border hover:border-critical hover:text-critical text-muted rounded-sm transition-colors focus-ring"
         >
           ■ Stop
         </button>
