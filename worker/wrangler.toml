@@ -1,0 +1,20 @@
+name = "tm-radar-worker"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+kv_namespaces = [
+  { binding = "KV", id = "REPLACE_WITH_KV_ID" }
+]
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173,https://localhost:5173"
+DAILY_BUDGET_USD = "5"
+PER_IP_DAILY_LIMIT = "10"
+CACHE_TTL_SECONDS = "86400"
+SONNET_MODEL = "claude-sonnet-4-6"
+HAIKU_MODEL = "claude-haiku-4-5-20251001"
+MAX_TOKENS = "700"
+
+# Secrets (set via `wrangler secret put`):
+#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put TURNSTILE_SECRET_KEY    (optional; skip in dev)
