@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { SetupScreen } from './components/SetupScreen';
+import { SetupScreen, type SessionMode } from './components/SetupScreen';
 import { Monitor } from './components/Monitor';
+import { workerEnabled } from './lib/claude';
 
 const API_KEY_STORAGE = 'anthropic_key';
 
 type SessionConfig = {
   brand: string;
-  apiKey: string;
+  mode: SessionMode;
+  apiKey?: string;
   threshold: number;
-  demoMode?: boolean;
 };
 
 export default function App() {
@@ -25,7 +26,7 @@ export default function App() {
   }, []);
 
   const handleStart = (cfg: SessionConfig) => {
-    if (!cfg.demoMode && cfg.apiKey) {
+    if (cfg.mode === 'byok' && cfg.apiKey) {
       try {
         sessionStorage.setItem(API_KEY_STORAGE, cfg.apiKey);
       } catch {
@@ -35,21 +36,23 @@ export default function App() {
     setConfig(cfg);
   };
 
-  const handleStop = () => {
-    setConfig(null);
-  };
-
   if (!config) {
-    return <SetupScreen initialKey={storedKey} onStart={handleStart} />;
+    return (
+      <SetupScreen
+        initialKey={storedKey}
+        workerEnabled={workerEnabled}
+        onStart={handleStart}
+      />
+    );
   }
 
   return (
     <Monitor
       brand={config.brand}
-      apiKey={config.apiKey}
+      mode={config.mode}
+      apiKey={config.apiKey ?? ''}
       threshold={config.threshold}
-      demoMode={!!config.demoMode}
-      onStop={handleStop}
+      onStop={() => setConfig(null)}
     />
   );
 }

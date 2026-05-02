@@ -88,6 +88,12 @@ Produce a structured triage memo:
 
 6. INDICATORS FOR LEGAL REVIEW: Investigative steps and evidence the reviewing attorney should verify before any enforcement decision (e.g. registrant identity via WHOIS/RDAP, prior use evidence, pattern of similar registrations, registrar/hosting jurisdiction).
 
+LANGUAGE DISCIPLINE — observe strictly in every section above:
+- Do NOT state that a UDRP limb or EUTMR sub-paragraph is "satisfied", "met", "established", "fulfilled", or "engaged" as a finding. Phrase as "indicator consistent with [limb]", "potentially engaged subject to verification of X", or "preliminary signal supporting [limb] absent counter-evidence".
+- Do NOT assert bad faith from the squatting technique alone. Phrase as "consistent with bad-faith intent absent counter-evidence; conclusion requires evidence of registrant's portfolio, prior C&D correspondence, and active use".
+- Where a fact is unknown to this tool (registrant identity, registered class scope, prior bona fide use, mark distinctiveness, reputation status), explicitly mark it "not assessed by this tool" rather than implying a conclusion.
+- Avoid intent-imputing verbs ("intended to", "deliberately", "designed to deceive"). Describe the technique's effect, not the registrant's mental state.
+
 Frame all conclusions as observations or indicators, not as recommendations or legal conclusions. Maximum 12 sentences total.`;
 }
 
@@ -140,4 +146,65 @@ export async function analyzeWithClaude(
 ): Promise<string> {
   const prompt = buildPrompt(brandName, result, websiteContent, brandProfile);
   return rateLimited(() => callAnthropic(apiKey, prompt));
+}
+
+const WORKER_URL = (import.meta.env.VITE_WORKER_URL ?? '').replace(/\/+$/, '');
+
+export const workerEnabled = WORKER_URL.length > 0;
+
+export class WorkerError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'WorkerError';
+    this.status = status;
+  }
+}
+
+async function callWorker(
+  brandName: string,
+  result: DetectionResult,
+  websiteContent: string | null,
+  brandProfile: BrandProfile | null,
+): Promise<string> {
+  const stage: AnalysisStage = websiteContent ? 'enriched' : 'domain-only';
+  const res = await fetch(`${WORKER_URL}/analyze`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      brand: brandName,
+      domain: result.domain,
+      score: result.score,
+      reasons: result.reasons,
+      stage,
+      websiteContent,
+      brandProfile,
+    }),
+  });
+
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const err = (await res.json()) as { error?: string };
+      detail = err?.error ?? '';
+    } catch {
+      /* ignore */
+    }
+    throw new WorkerError(res.status, detail || `Worker ${res.status}`);
+  }
+
+  const data = (await res.json()) as { analysis?: string };
+  return data.analysis ?? '';
+}
+
+export async function analyzeViaWorker(
+  brandName: string,
+  result: DetectionResult,
+  websiteContent: string | null,
+  brandProfile: BrandProfile | null = null,
+): Promise<string> {
+  if (!WORKER_URL) {
+    throw new Error('Worker URL not configured (VITE_WORKER_URL missing)');
+  }
+  return rateLimited(() => callWorker(brandName, result, websiteContent, brandProfile));
 }

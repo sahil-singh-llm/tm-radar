@@ -1,7 +1,13 @@
 export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'error' | 'demo';
 
+export type CertMeta = {
+  issuer?: string;
+  notBefore?: string;
+  notAfter?: string;
+};
+
 export type CtSourceHandlers = {
-  onDomain: (domain: string) => void;
+  onDomain: (domain: string, meta: CertMeta) => void;
   onStatusChange: (status: ConnectionStatus) => void;
   brandHint?: string;
   forceDemoMode?: boolean;
@@ -12,15 +18,49 @@ const FETCH_TIMEOUT_MS = 20_000;
 const MAX_CONSECUTIVE_FAILURES = 3;
 const FIRST_POLL_BACKLOG_LIMIT = 12;
 
-const CORS_PROXIES: Array<(url: string) => string> = [
-  (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`,
+const WORKER_URL = (import.meta.env.VITE_WORKER_URL ?? '').replace(/\/+$/, '');
+
+type Fetcher = (brand: string, target: string) => Promise<unknown>;
+
+const FETCHERS: Fetcher[] = [
+  ...(WORKER_URL
+    ? [
+        async (brand: string) => {
+          const res = await fetch(
+            `${WORKER_URL}/crtsh?q=${encodeURIComponent(brand)}`,
+            { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+          );
+          if (!res.ok) throw new Error(`worker ${res.status}`);
+          return res.json();
+        },
+      ]
+    : []),
+  async (_brand: string, target: string) => {
+    const res = await fetch(
+      `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`,
+      { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+    );
+    if (!res.ok) throw new Error(`allorigins ${res.status}`);
+    const data = (await res.json()) as { contents?: string };
+    return typeof data.contents === 'string' ? JSON.parse(data.contents) : data;
+  },
+  async (_brand: string, target: string) => {
+    const res = await fetch(
+      `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(target)}`,
+      { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+    );
+    if (!res.ok) throw new Error(`codetabs ${res.status}`);
+    return JSON.parse(await res.text());
+  },
 ];
 
 type CrtshEntry = {
   id?: number;
   name_value?: string;
   common_name?: string;
+  issuer_name?: string;
+  not_before?: string;
+  not_after?: string;
 };
 
 /**
@@ -113,8 +153,13 @@ export class CrtshClient {
       : newEntries;
 
     for (const entry of toEmit) {
+      const meta: CertMeta = {
+        issuer: shortenIssuer(entry.issuer_name),
+        notBefore: entry.not_before,
+        notAfter: entry.not_after,
+      };
       for (const domain of extractDomains(entry)) {
-        this.handlers.onDomain(domain);
+        this.handlers.onDomain(domain, meta);
       }
     }
 
@@ -134,23 +179,9 @@ export class CrtshClient {
   private async fetchEntries(): Promise<CrtshEntry[]> {
     const target = `https://crt.sh/?q=%25${encodeURIComponent(this.brand)}%25&exclude=expired&dedupe=Y&output=json`;
     let lastErr: unknown = null;
-    for (const proxy of CORS_PROXIES) {
+    for (const fetcher of FETCHERS) {
       try {
-        const res = await fetch(proxy(target), {
-          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        });
-        if (!res.ok) {
-          lastErr = new Error(`HTTP ${res.status}`);
-          continue;
-        }
-        const ct = res.headers.get('content-type') ?? '';
-        let parsed: unknown;
-        if (ct.includes('application/json')) {
-          const data = (await res.json()) as { contents?: string };
-          parsed = typeof data?.contents === 'string' ? JSON.parse(data.contents) : data;
-        } else {
-          parsed = JSON.parse(await res.text());
-        }
+        const parsed = await fetcher(this.brand, target);
         if (!Array.isArray(parsed)) {
           lastErr = new Error('unexpected response shape');
           continue;
@@ -171,7 +202,7 @@ export class CrtshClient {
     const brand = this.brand || 'brand';
     let counter = 0;
 
-    const emit = (d: string) => this.handlers.onDomain(d);
+    const emit = (d: string) => this.handlers.onDomain(d, fakeCertMeta());
 
     this.demoTimer = window.setInterval(() => {
       const batch = 1 + Math.floor(Math.random() * 3);
@@ -185,6 +216,26 @@ export class CrtshClient {
       emit(variants[Math.floor(Math.random() * variants.length)]);
     }, 9000 + Math.random() * 3000);
   }
+}
+
+function shortenIssuer(name?: string): string | undefined {
+  if (!name) return undefined;
+  // crt.sh issuer_name format: "C=US, O=Let's Encrypt, CN=R3"
+  // Prefer the Organization (O=) field; fall back to the whole string.
+  const m = name.match(/O\s*=\s*"?([^",]+)"?/i);
+  return (m?.[1] ?? name).trim();
+}
+
+const FAKE_ISSUERS = ["Let's Encrypt", 'Sectigo', 'DigiCert', 'ZeroSSL', 'GoDaddy'];
+
+function fakeCertMeta(): CertMeta {
+  const ageDays = Math.floor(Math.random() * 30);
+  const lifeDays = 60 + Math.floor(Math.random() * 60);
+  return {
+    issuer: FAKE_ISSUERS[Math.floor(Math.random() * FAKE_ISSUERS.length)],
+    notBefore: new Date(Date.now() - ageDays * 86_400_000).toISOString(),
+    notAfter: new Date(Date.now() + (lifeDays - ageDays) * 86_400_000).toISOString(),
+  };
 }
 
 function extractDomains(entry: CrtshEntry): string[] {

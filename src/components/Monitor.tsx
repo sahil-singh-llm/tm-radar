@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CrtshClient, type ConnectionStatus } from '../lib/crtsh';
+import { CrtshClient, type ConnectionStatus, type CertMeta } from '../lib/crtsh';
 import { analyzeDomain, type DetectionResult } from '../lib/detection';
 import { fetchWebsiteContent } from '../lib/fetcher';
 import { fetchScreenshotUrl } from '../lib/screenshot';
-import { analyzeWithClaude } from '../lib/claude';
+import { analyzeWithClaude, analyzeViaWorker } from '../lib/claude';
 import { lookupBrandProfile, type BrandProfile } from '../lib/brandProfile';
 import { generateDemoAnalysis } from '../lib/demoAnalysis';
+import type { SessionMode } from './SetupScreen';
 import { StatsBar } from './StatsBar';
 import { Radar, type FeedEntry } from './Radar';
 import { DomainAlert, type AlertEntry } from './DomainAlert';
 
 type Props = {
   brand: string;
+  mode: SessionMode;
   apiKey: string;
   threshold: number;
-  demoMode: boolean;
   onStop: () => void;
 };
 
@@ -22,9 +23,7 @@ const FEED_MAX = 24;
 const ALERT_MAX = 60;
 const FLUSH_MS = 100;
 
-const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
-
-export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
+export function Monitor({ brand, mode, apiKey, threshold, onStop }: Props) {
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [feed, setFeed] = useState<FeedEntry[]>([]);
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);
@@ -32,6 +31,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
   const [perMinute, setPerMinute] = useState(0);
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'medium'>('all');
   const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const startedAt = useRef(Date.now()).current;
 
@@ -56,6 +56,23 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
     );
   };
 
+  const runStage = async (
+    result: DetectionResult,
+    content: string | null,
+    profile: BrandProfile | null,
+  ): Promise<string> => {
+    if (mode === 'worker') {
+      try {
+        return await analyzeViaWorker(brand, result, content, profile);
+      } catch {
+        // Worker unreachable, budget exhausted, or rate-limited → silent fallback
+        // to canned analysis so the user still sees a memo.
+        return generateDemoAnalysis(brand, result, !!content);
+      }
+    }
+    return analyzeWithClaude(apiKey, brand, result, content, profile);
+  };
+
   const runAnalysis = async (result: DetectionResult) => {
     if (analyzing.current.has(result.domain)) return;
     analyzing.current.add(result.domain);
@@ -63,31 +80,24 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
     updateAlert(result.domain, { analysisStage: 'pending', error: undefined });
 
     try {
-      if (demoMode) {
-        await runDemoAnalysis(result);
-        return;
-      }
-
-      // Stage 1 — domain-only analysis
       const profile = brandProfileRef.current;
-      const stage1 = await analyzeWithClaude(apiKey, brand, result, null, profile);
+
+      const stage1 = await runStage(result, null, profile);
       updateAlert(result.domain, {
         analysis: stage1,
         analysisStage: 'domain-only',
       });
 
-      // Stage 2 — fetch website + enriched analysis
       const content = await fetchWebsiteContent(result.domain);
       if (!content) {
         updateAlert(result.domain, {
           websiteUnreachable: true,
-          // Keep stage at domain-only — there's nothing to enrich.
           analysisStage: 'domain-only',
         });
         return;
       }
 
-      const stage2 = await analyzeWithClaude(apiKey, brand, result, content, profile);
+      const stage2 = await runStage(result, content, profile);
       updateAlert(result.domain, {
         analysis: stage2,
         analysisStage: 'enriched',
@@ -101,27 +111,6 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
     } finally {
       analyzing.current.delete(result.domain);
     }
-  };
-
-  const runDemoAnalysis = async (result: DetectionResult) => {
-    // Stage 1 — fake latency, then domain-only canned analysis
-    await sleep(700 + Math.random() * 800);
-    updateAlert(result.domain, {
-      analysis: generateDemoAnalysis(brand, result, false),
-      analysisStage: 'domain-only',
-    });
-
-    // Stage 2 — fake fetch + 20% chance of unreachable for variety
-    await sleep(1400 + Math.random() * 1400);
-    if (Math.random() < 0.2) {
-      updateAlert(result.domain, { websiteUnreachable: true, analysisStage: 'domain-only' });
-      return;
-    }
-    updateAlert(result.domain, {
-      analysis: generateDemoAnalysis(brand, result, true),
-      analysisStage: 'enriched',
-      websiteFetched: true,
-    });
   };
 
   const requestAnalysis = (domain: string) => {
@@ -140,10 +129,6 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
   };
 
   useEffect(() => {
-    if (demoMode) {
-      setBrandProfile(null);
-      return;
-    }
     let cancelled = false;
     setBrandProfile(null);
     lookupBrandProfile(brand).then((p) => {
@@ -152,7 +137,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [brand, demoMode]);
+  }, [brand]);
 
   useEffect(() => {
     const flush = () => {
@@ -184,7 +169,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
       flushTimer.current = window.setTimeout(flush, FLUSH_MS);
     };
 
-    const onDomain = (domain: string) => {
+    const onDomain = (domain: string, meta: CertMeta) => {
       seenBuf.current++;
 
       // Detection (synchronous, fast)
@@ -201,9 +186,10 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
           return;
         }
 
-        const willCapture = !demoMode && result.score >= threshold;
+        const willCapture = result.score >= threshold;
         const newAlert: AlertEntry = {
           result,
+          certMeta: meta,
           createdAt: Date.now(),
           analysis: null,
           analysisStage: result.score >= threshold ? 'pending' : 'idle',
@@ -235,7 +221,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
       onDomain,
       onStatusChange: setStatus,
       brandHint: brand,
-      forceDemoMode: demoMode,
+      forceDemoMode: false,
     });
     client.start();
 
@@ -247,7 +233,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brand, apiKey, threshold, demoMode]);
+  }, [brand, apiKey, threshold, mode]);
 
   const counts = useMemo(() => {
     let c = 0, h = 0, m = 0;
@@ -264,9 +250,48 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
     return alerts.filter((a) => a.result.severity === filter);
   }, [alerts, filter]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inEditable =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable);
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === 'Escape') {
+        if (helpOpen) {
+          setHelpOpen(false);
+          e.preventDefault();
+          return;
+        }
+        if (target && target.blur) target.blur();
+        return;
+      }
+      if (inEditable) return;
+
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        setHelpOpen((v) => !v);
+        e.preventDefault();
+      } else if (e.key === '1') {
+        setFilter('all');
+      } else if (e.key === '2') {
+        setFilter('critical');
+      } else if (e.key === '3') {
+        setFilter('high');
+      } else if (e.key === '4') {
+        setFilter('medium');
+      } else if (e.key === 's' || e.key === 'S') {
+        onStop();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [helpOpen, onStop]);
+
   return (
     <div className="h-screen flex flex-col bg-bg text-text">
-      {demoMode && <DemoBanner />}
       <StatsBar
         brand={brand}
         status={status}
@@ -295,7 +320,7 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-2 py-1 border rounded-sm transition-colors ${
+                  className={`px-2 py-1 border rounded-sm transition-colors focus-ring ${
                     filter === f
                       ? 'border-accent text-accent bg-accent/10'
                       : 'border-border text-muted hover:text-text'
@@ -326,14 +351,73 @@ export function Monitor({ brand, apiKey, threshold, demoMode, onStop }: Props) {
         {/* RADAR COLUMN */}
         <Radar entries={feed} alerts={alerts} brand={brand} />
       </div>
+
+      <HelpHint onOpen={() => setHelpOpen(true)} />
+      {helpOpen && <KeyboardHelp onClose={() => setHelpOpen(false)} />}
     </div>
   );
 }
 
-function DemoBanner() {
+function HelpHint({ onOpen }: { onOpen: () => void }) {
   return (
-    <div className="bg-accent/15 border-b border-accent/30 px-6 py-2 text-center text-[11px] text-accent font-mono uppercase tracking-widest">
-      ★ Demo Mode — Simulated certificate stream + canned legal analyses · No live data, no API calls
+    <button
+      onClick={onOpen}
+      title="Keyboard shortcuts (?)"
+      className="fixed bottom-4 right-4 z-30 w-7 h-7 flex items-center justify-center rounded-full border border-border bg-surface/90 text-muted hover:text-accent hover:border-accent text-xs font-mono backdrop-blur-sm focus-ring transition-colors"
+      aria-label="Show keyboard shortcuts"
+    >
+      ?
+    </button>
+  );
+}
+
+function KeyboardHelp({ onClose }: { onClose: () => void }) {
+  const rows: Array<[string, string]> = [
+    ['?', 'Toggle this help'],
+    ['1', 'Show all alerts'],
+    ['2', 'Filter critical'],
+    ['3', 'Filter high'],
+    ['4', 'Filter medium'],
+    ['S', 'Stop monitoring'],
+    ['Esc', 'Close / blur input'],
+  ];
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-end justify-end p-4 sm:items-center sm:justify-center bg-bg/40 backdrop-blur-[2px]"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard shortcuts"
+    >
+      <div
+        className="w-full max-w-xs bg-surface border border-border rounded-sm shadow-2xl p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-baseline justify-between mb-4">
+          <h3 className="text-xs font-mono uppercase tracking-wider text-muted">
+            Keyboard
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-muted hover:text-text text-xs font-mono uppercase tracking-wider rounded-sm focus-ring px-1"
+            aria-label="Close help"
+          >
+            esc
+          </button>
+        </div>
+        <dl className="space-y-2 text-sm">
+          {rows.map(([k, label]) => (
+            <div key={k} className="flex items-center justify-between gap-4">
+              <dt className="text-text">{label}</dt>
+              <dd>
+                <kbd className="font-mono text-[11px] px-2 py-0.5 rounded-sm border border-border bg-bg text-accent min-w-[1.75rem] inline-block text-center">
+                  {k}
+                </kbd>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </div>
   );
 }
@@ -341,7 +425,7 @@ function DemoBanner() {
 function EmptyState({ filter, brand }: { filter: string; brand: string }) {
   return (
     <div className="border border-dashed border-border rounded-sm p-12 text-center">
-      <div className="text-muted font-mono text-xs uppercase tracking-widest mb-3">
+      <div className="text-muted font-mono text-xs uppercase tracking-wider mb-3">
         {filter === 'all' ? 'Awaiting Detections' : `No ${filter} alerts yet`}
       </div>
       <p className="text-sm text-muted">
