@@ -217,11 +217,15 @@ export function Monitor({ brand, mode, apiKey, threshold, onStop }: Props) {
       scheduleFlush();
     };
 
+    const forceDemoMode =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).has('demo');
+
     const client = new CrtshClient({
       onDomain,
       onStatusChange: setStatus,
       brandHint: brand,
-      forceDemoMode: false,
+      forceDemoMode,
     });
     client.start();
 
