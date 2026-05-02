@@ -3,11 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2026-01-01"
 
 kv_namespaces = [
-  { binding = "KV", id = "REPLACE_WITH_KV_ID" }
+  { binding = "KV", id = "587a1342590a40668a81d60014838f20" }
 ]
 
 [vars]
-ALLOWED_ORIGINS = "http://localhost:5173,https://localhost:5173"
+ALLOWED_ORIGINS = "http://localhost:5173,https://localhost:5173,https://sahil-singh-llm.github.io"
 DAILY_BUDGET_USD = "5"
 PER_IP_DAILY_LIMIT = "10"
 CACHE_TTL_SECONDS = "86400"
